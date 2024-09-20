@@ -17,12 +17,6 @@ public class Calculator {
         return a * b;
     }
 
-    // Method to divide two numbers
-    public int divide(int a, int b) throws IllegalArgumentException {
-        if (b == 0) {
-            throw new IllegalArgumentException("Cannot divide by zero.");
-        }
-        return a / b;
-    }
+
 }
 
