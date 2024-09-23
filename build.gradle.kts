@@ -1,6 +1,6 @@
 plugins {
-    id("org.springframework.boot") version "3.1.0" // Spring Boot plugin
-    id("io.spring.dependency-management") version "1.1.0" // Manages dependencies versions for Spring Boot
+    id("org.springframework.boot") version "3.1.0"
+    id("io.spring.dependency-management") version "1.1.0"
     id("java")
 }
 
@@ -8,14 +8,13 @@ group = "com.reserveit"
 version = "1.0-SNAPSHOT"
 
 repositories {
-    mavenCentral() // Ensures Gradle pulls dependencies from Maven Central
+    mavenCentral()
 }
 
 dependencies {
     // Spring Boot dependencies
-    implementation("org.springframework.boot:spring-boot-starter-web") // For creating REST APIs
-    implementation("org.springframework.boot:spring-boot-starter-data-jpa") // For JPA support
-
+    implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 
     // Jackson for JSON conversion
     implementation("com.fasterxml.jackson.core:jackson-databind")
@@ -27,6 +26,12 @@ dependencies {
 
     // Spring Boot testing
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+}
+
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(22))
+    }
 }
 
 tasks.test {
