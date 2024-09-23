@@ -15,7 +15,7 @@ dependencies {
     // Spring Boot dependencies
     implementation("org.springframework.boot:spring-boot-starter-web") // For creating REST APIs
     implementation("org.springframework.boot:spring-boot-starter-data-jpa") // For JPA support
-    implementation("mysql:mysql-connector-java:8.0.34") // MySQL connector
+
 
     // Jackson for JSON conversion
     implementation("com.fasterxml.jackson.core:jackson-databind")
