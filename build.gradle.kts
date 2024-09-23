@@ -11,6 +11,9 @@ repositories {
     mavenCentral()
 }
 
+springBoot{
+  mainClass.set("com.reserveit.ApplicationKt")
+}
 dependencies {
     // Spring Boot dependencies
     implementation("org.springframework.boot:spring-boot-starter-web")

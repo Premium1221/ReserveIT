@@ -11,3 +11,4 @@ build:
 test:
   script:
     - gradle test
+
