@@ -1,3 +1,5 @@
+image: openjdk:22
+
 stages:
   - build
   - test
