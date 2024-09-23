@@ -4,8 +4,8 @@ stages:
 
 build:
   script:
-    - ./gradlew build
+    - ./gradle build
 
 test:
   script:
-    - ./gradlew test
+    - ./gradle test
