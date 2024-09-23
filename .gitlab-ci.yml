@@ -1,24 +1,14 @@
+image: openjdk:22
+
 stages:
   - build
   - test
-  - deploy
 
-build-job:
-  stage: build
+build:
   script:
-    - echo "Building the project"
+    - gradle build
 
-lint-test-job:
-  stage: test
+test:
   script:
-    - echo "Running linter"
+    - gradle test
 
-unit-test-job:
-  stage: test
-  script:
-    - echo "Running unit tests"
-
-deploy-job:
-  stage: deploy
-  script:
-    - echo "Deploying the project"
