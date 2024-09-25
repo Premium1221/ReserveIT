@@ -1,6 +1,8 @@
 package service;
 
 import com.reserveit.dto.ReservationDto;
+import com.reserveit.model.Reservation;
+import com.reserveit.repository.HardcodedReservationRepository;
 import com.reserveit.service.ReservationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -12,10 +14,13 @@ import static org.junit.jupiter.api.Assertions.*;
 class ReservationServiceTest {
 
     private ReservationService reservationService;
+    private HardcodedReservationRepository hardcodedReservationRepository;
 
     @BeforeEach
     void setUp() {
-        reservationService = new ReservationService();  // Directly instantiate the service
+        // Use a hardcoded repository in the test
+        hardcodedReservationRepository = new HardcodedReservationRepository();
+        reservationService = new ReservationService(hardcodedReservationRepository);
     }
 
     @Test
