@@ -2,10 +2,10 @@ package com.reserveit.service;
 
 import com.reserveit.dto.ReservationDto;
 import com.reserveit.model.Reservation;
+import com.reserveit.repository.HardcodedReservationRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -13,32 +13,31 @@ import java.util.stream.Collectors;
 @Service
 public class ReservationService {
 
-    private final List<Reservation> reservations = new ArrayList<>();
-    private Long nextId = 1L; // To simulate auto-incrementing ID
+    private final HardcodedReservationRepository reservationRepository;
+
+    public ReservationService(HardcodedReservationRepository reservationRepository) {
+        this.reservationRepository = reservationRepository;
+    }
 
     public ReservationDto createReservation(ReservationDto reservationDto) {
         Reservation reservation = convertToEntity(reservationDto);
-        reservation.setId(nextId++); // Simulate database ID generation
-        reservations.add(reservation);
-        return convertToDto(reservation);
+        Reservation savedReservation = reservationRepository.save(reservation);
+        return convertToDto(savedReservation);
     }
 
     public List<ReservationDto> getAllReservations() {
-        return reservations.stream()
+        return reservationRepository.findAll().stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
 
     public ReservationDto updateReservation(Long id, ReservationDto reservationDto) {
-        Optional<Reservation> existingReservation = reservations.stream()
-                .filter(r -> r.getId().equals(id))
-                .findFirst();
+        Optional<Reservation> existingReservation = reservationRepository.findById(id);
 
         if (existingReservation.isPresent()) {
             Reservation updatedReservation = convertToEntity(reservationDto);
             updatedReservation.setId(id);
-            reservations.remove(existingReservation.get());
-            reservations.add(updatedReservation);
+            reservationRepository.save(updatedReservation);
             return convertToDto(updatedReservation);
         }
 

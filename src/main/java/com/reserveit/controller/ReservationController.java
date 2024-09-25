@@ -13,7 +13,7 @@ public class ReservationController {
 
     private final ReservationService reservationService;
 
-    // Constructor injection
+
     public ReservationController(ReservationService reservationService) {
         this.reservationService = reservationService;
     }
