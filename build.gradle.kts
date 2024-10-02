@@ -14,14 +14,18 @@ repositories {
 springBoot{
   mainClass.set("com.reserveit.ApplicationKt")
 }
+
 dependencies {
-    // Spring Boot dependencies
+    // Other dependencies
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 
     // Jackson for JSON conversion
     implementation("com.fasterxml.jackson.core:jackson-databind")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+
+    // Spring Security for password hashing
+    implementation("org.springframework.boot:spring-boot-starter-security")
 
     // JUnit for testing
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
@@ -30,7 +34,10 @@ dependencies {
     // Spring Boot testing
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 
+    implementation("org.springframework.boot:spring-boot-starter-security")
 
+    // AWS SDK for S3
+    implementation("software.amazon.awssdk:s3:2.20.0")
 }
 
 java {

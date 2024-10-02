@@ -1,4 +1,4 @@
-package com.reserveit.service;
+package com.reserveit.service.impl;
 
 import com.reserveit.dto.ReservationDto;
 import com.reserveit.model.Reservation;
@@ -11,11 +11,11 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
-public class ReservationService {
+public class ReservationServiceImpl {
 
     private final HardcodedReservationRepository reservationRepository;
 
-    public ReservationService(HardcodedReservationRepository reservationRepository) {
+    public ReservationServiceImpl(HardcodedReservationRepository reservationRepository) {
         this.reservationRepository = reservationRepository;
     }
 
@@ -44,7 +44,7 @@ public class ReservationService {
         throw new IllegalArgumentException("Reservation not found with id: " + id);
     }
 
-    // Conversion methods
+
     private ReservationDto convertToDto(Reservation reservation) {
         ReservationDto dto = new ReservationDto();
         dto.setId(reservation.getId());
