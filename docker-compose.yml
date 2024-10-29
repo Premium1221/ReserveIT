@@ -7,28 +7,14 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8080:8080"
-    depends_on:
-      - db
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/restaurantdb
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: rootpassword
+      SPRING_DATASOURCE_URL: jdbc:h2:mem:testdb
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.h2.Driver
+      SPRING_DATASOURCE_USERNAME: sa
+      SPRING_DATASOURCE_PASSWORD:
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
     networks:
       - app-network
-
-
-  db:
-    image: mysql:8.0
-    environment:
-      MYSQL_DATABASE: restaurantdb
-      MYSQL_ROOT_PASSWORD: rootpassword
-    ports:
-      - "3306:3306"
-    networks:
-      - app-network
-
-    restart: always
 
 networks:
   app-network:
