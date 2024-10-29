@@ -6,7 +6,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
+@CrossOrigin(origins = "http://localhost:5204")
 @RestController
 @RequestMapping("/api/reservations")
 public class ReservationController {
@@ -31,7 +33,7 @@ public class ReservationController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ReservationDto> updateReservation(@PathVariable Long id, @RequestBody ReservationDto reservationDto) {
+    public ResponseEntity<ReservationDto> updateReservation(@PathVariable Long   id, @RequestBody ReservationDto reservationDto) {
         ReservationDto updatedReservation = reservationServiceImpl.updateReservation(id, reservationDto);
         return ResponseEntity.ok(updatedReservation);
     }

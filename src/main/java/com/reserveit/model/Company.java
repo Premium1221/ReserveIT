@@ -1,36 +1,44 @@
 package com.reserveit.model;
 
 import jakarta.persistence.*;
+import jakarta.persistence.Table;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Pattern;
 
 import java.util.List;
 import java.util.UUID;
 
 @Entity
+@Table(name = "company")
 public class Company {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
+
+    @Column(nullable = false)
     private String name;
     private String address;
+    @Pattern(regexp = "^[0-9]{10}$")
     private String phone;
+    @Email
+    @Column(nullable = false)
     private String email;
 
-    @ElementCollection
+    public Float getRating() {
+        return rating;
+    }
+
+    public void setRating(Float rating) {
+        this.rating = rating;
+    }
+
+    private Float rating;
+    @ElementCollection(fetch = FetchType.LAZY)
     private List<String> tags;
 
     private String pictureUrl;
 
-
-    public String getPictureUrl() {
-        return pictureUrl;
-    }
-
-    public void setPictureUrl(String pictureUrl) {
-        this.pictureUrl = pictureUrl;
-    }
-
-
-
+    // Getters and setters
     public UUID getId() {
         return id;
     }
@@ -77,5 +85,13 @@ public class Company {
 
     public void setTags(List<String> tags) {
         this.tags = tags;
+    }
+
+    public String getPictureUrl() {
+        return pictureUrl;
+    }
+
+    public void setPictureUrl(String pictureUrl) {
+        this.pictureUrl = pictureUrl;
     }
 }

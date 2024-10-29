@@ -3,6 +3,7 @@ package com.reserveit.model;
 import com.reserveit.enums.UserRole;
 import jakarta.persistence.Entity;
 import jakarta.persistence.*;
+import jakarta.persistence.Table;
 
 import java.util.UUID;
 @Entity

@@ -4,12 +4,13 @@ import com.reserveit.dto.CompanyDto;
 import com.reserveit.model.Company;
 import com.reserveit.repository.CompanyRepository;
 import com.reserveit.service.CompanyService;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
+@Service
 public class CompanyServiceImpl implements CompanyService {
     private final CompanyRepository companyRepository;
     public CompanyServiceImpl(CompanyRepository companyRepository) {

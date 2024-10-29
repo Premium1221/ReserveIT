@@ -1,6 +1,8 @@
 package com.reserveit.model;
 
 import jakarta.persistence.*;
+import jakarta.persistence.Table;
+
 import java.time.LocalDate;
 
 @Entity
@@ -14,6 +16,10 @@ public class Reservation {
     private String customerName;
     private LocalDate reservationDate;
     private int numberOfPeople;
+
+    @ManyToOne
+    @JoinColumn(name = "company_id")
+    private Company company;
 
     // Getters and Setters
 
@@ -47,5 +53,13 @@ public class Reservation {
 
     public void setNumberOfPeople(int numberOfPeople) {
         this.numberOfPeople = numberOfPeople;
+    }
+
+    public Company getCompany() {
+        return company;
+    }
+
+    public void setCompany(Company company) {
+        this.company = company;
     }
 }

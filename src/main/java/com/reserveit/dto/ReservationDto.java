@@ -1,13 +1,24 @@
 package com.reserveit.dto;
 
+import java.util.UUID;
+
 public class ReservationDto {
 
     private Long id;
     private String customerName;
     private String reservationDate;
     private int numberOfPeople;
+    private UUID companyId;
 
-    // Getters and setters
+    public UUID getCompanyId() {
+        return companyId;
+    }
+
+    public void setCompanyId(UUID companyId) {
+        this.companyId = companyId;
+    }
+
+    // Getters and Setters
     public Long getId() {
         return id;
     }
@@ -39,4 +50,6 @@ public class ReservationDto {
     public void setNumberOfPeople(int numberOfPeople) {
         this.numberOfPeople = numberOfPeople;
     }
+
+
 }

@@ -11,43 +11,44 @@ repositories {
     mavenCentral()
 }
 
-springBoot{
-  mainClass.set("com.reserveit.ApplicationKt")
+springBoot {
+    mainClass.set("com.reserveit.MainApplication")
 }
 
 dependencies {
-    // Other dependencies
+    // Spring Boot Starters
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    implementation("org.springframework.boot:spring-boot-starter-security")
 
-    // Jackson for JSON conversion
+    // Jackson for JSON processing
     implementation("com.fasterxml.jackson.core:jackson-databind")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
 
-    // Spring Security for password hashing
-    implementation("org.springframework.boot:spring-boot-starter-security")
+    // HSQLDB In-Memory Database
+    implementation("org.hsqldb:hsqldb:2.6.1")
+    implementation("com.h2database:h2")
 
-    // JUnit for testing
+    // AWS S3 SDK
+    implementation("software.amazon.awssdk:s3:2.20.0")
+
+    // Add Jakarta Validation API and Hibernate Validator
+    implementation("jakarta.validation:jakarta.validation-api:3.0.0")
+    implementation("org.hibernate.validator:hibernate-validator:7.0.0.Final")
+
+    // Testing
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
-
-    // Spring Boot testing
     testImplementation("org.springframework.boot:spring-boot-starter-test")
-
-    implementation("org.springframework.boot:spring-boot-starter-security")
-
-    // AWS SDK for S3
-    implementation("software.amazon.awssdk:s3:2.20.0")
 }
+
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
+        languageVersion.set(JavaLanguageVersion.of(17))
     }
 }
 
 tasks.test {
     useJUnitPlatform()
 }
-
-

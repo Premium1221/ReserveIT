@@ -1,85 +1,110 @@
 package service;
 
 import com.reserveit.dto.ReservationDto;
-import com.reserveit.repository.HardcodedReservationRepository;
+import com.reserveit.model.Reservation;
+import com.reserveit.repository.ReservationRepository;
 import com.reserveit.service.impl.ReservationServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 class ReservationServiceTest {
 
+    @Mock
+    private ReservationRepository reservationRepository;
+
+    @InjectMocks
     private ReservationServiceImpl reservationServiceImpl;
-    private HardcodedReservationRepository hardcodedReservationRepository;
 
     @BeforeEach
     void setUp() {
-        hardcodedReservationRepository = new HardcodedReservationRepository();
-        reservationServiceImpl = new ReservationServiceImpl(hardcodedReservationRepository);
+        MockitoAnnotations.openMocks(this);
     }
 
     @Test
     void testCreateReservation() {
-        // Arrange
         ReservationDto reservationDto = new ReservationDto();
         reservationDto.setCustomerName("John Doe");
         reservationDto.setReservationDate("2024-09-24");
         reservationDto.setNumberOfPeople(4);
 
-        // Act
-        ReservationDto savedReservation = reservationServiceImpl.createReservation(reservationDto);
+        Reservation savedReservation = new Reservation();
+        savedReservation.setId(1L);
+        savedReservation.setCustomerName("John Doe");
+        savedReservation.setReservationDate(java.time.LocalDate.of(2024, 9, 24));
+        savedReservation.setNumberOfPeople(4);
 
-        // Assert
-        assertNotNull(savedReservation.getId());
-        assertEquals("John Doe", savedReservation.getCustomerName());
-        assertEquals("2024-09-24", savedReservation.getReservationDate());
-        assertEquals(4, savedReservation.getNumberOfPeople());
+        when(reservationRepository.save(any(Reservation.class))).thenReturn(savedReservation);
+
+        ReservationDto result = reservationServiceImpl.createReservation(reservationDto);
+
+        assertNotNull(result.getId());
+        assertEquals("John Doe", result.getCustomerName());
+        assertEquals("2024-09-24", result.getReservationDate());
+        assertEquals(4, result.getNumberOfPeople());
+
+        verify(reservationRepository, times(1)).save(any(Reservation.class));
     }
 
     @Test
     void testGetAllReservations() {
-        // Arrange
-        ReservationDto reservation1 = new ReservationDto();
+        Reservation reservation1 = new Reservation();
+        reservation1.setId(1L);
         reservation1.setCustomerName("John Doe");
-        reservation1.setReservationDate("2024-09-24");
+        reservation1.setReservationDate(java.time.LocalDate.of(2024, 9, 24));
         reservation1.setNumberOfPeople(4);
-        reservationServiceImpl.createReservation(reservation1);
 
-        ReservationDto reservation2 = new ReservationDto();
+        Reservation reservation2 = new Reservation();
+        reservation2.setId(1L);
         reservation2.setCustomerName("Jane Smith");
-        reservation2.setReservationDate("2024-09-25");
+        reservation2.setReservationDate(java.time.LocalDate.of(2024, 9, 25));
         reservation2.setNumberOfPeople(2);
-        reservationServiceImpl.createReservation(reservation2);
 
-        // Act
+        when(reservationRepository.findAll()).thenReturn(Arrays.asList(reservation1, reservation2));
+
         List<ReservationDto> reservations = reservationServiceImpl.getAllReservations();
 
-        // Assert
         assertEquals(2, reservations.size());
         assertEquals("John Doe", reservations.get(0).getCustomerName());
         assertEquals("Jane Smith", reservations.get(1).getCustomerName());
+
+        verify(reservationRepository, times(1)).findAll();
     }
 
     @Test
     void testUpdateReservation() {
-        // Arrange
-        ReservationDto reservationDto = new ReservationDto();
-        reservationDto.setCustomerName("John Doe");
-        reservationDto.setReservationDate("2024-09-24");
-        reservationDto.setNumberOfPeople(4);
-        ReservationDto savedReservation = reservationServiceImpl.createReservation(reservationDto);
+        Reservation reservation = new Reservation();
+        reservation.setId(1L);
+        reservation.setCustomerName("John Doe");
+        reservation.setReservationDate(java.time.LocalDate.of(2024, 9, 24));
+        reservation.setNumberOfPeople(4);
 
-        savedReservation.setCustomerName("Jane Doe");
-        savedReservation.setNumberOfPeople(5);
+        when(reservationRepository.findById(any(UUID.class))).thenReturn(Optional.of(reservation));
 
-        // Act
-        ReservationDto updatedReservation = reservationServiceImpl.updateReservation(savedReservation.getId(), savedReservation);
+        ReservationDto updatedReservationDto = new ReservationDto();
+        updatedReservationDto.setCustomerName("Jane Doe");
+        updatedReservationDto.setReservationDate("2024-09-24");
+        updatedReservationDto.setNumberOfPeople(5);
 
-        // Assert
-        assertEquals("Jane Doe", updatedReservation.getCustomerName());
-        assertEquals(5, updatedReservation.getNumberOfPeople());
+        when(reservationRepository.save(any(Reservation.class))).thenReturn(reservation);
+
+        ReservationDto result = reservationServiceImpl.updateReservation(reservation.getId(), updatedReservationDto);
+
+        assertEquals("Jane Doe", result.getCustomerName());
+        assertEquals(5, result.getNumberOfPeople());
+
+        verify(reservationRepository, times(1)).findById(any(UUID.class));
+        verify(reservationRepository, times(1)).save(any(Reservation.class));
     }
 }
