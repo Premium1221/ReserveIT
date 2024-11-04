@@ -13,10 +13,10 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable())  // Disable CSRF
+                .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/reservations/**").permitAll()  // Allow access to reservations
-                        .anyRequest().authenticated() // Require authentication for other endpoints
+                        .requestMatchers("/api/reservations/**", "/api/companies/**").permitAll()
+                        .anyRequest().authenticated()
                 );
 
         return http.build();

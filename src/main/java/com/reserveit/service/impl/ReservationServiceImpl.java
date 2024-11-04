@@ -5,6 +5,7 @@ import com.reserveit.model.Company;
 import com.reserveit.model.Reservation;
 import com.reserveit.repository.CompanyRepository;
 import com.reserveit.repository.ReservationRepository;
+import com.reserveit.service.ReservationService;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -13,7 +14,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
-public class ReservationServiceImpl {
+public class ReservationServiceImpl implements ReservationService {
 
     private final ReservationRepository reservationRepository;
     private final CompanyRepository companyRepository;
@@ -71,8 +72,15 @@ public class ReservationServiceImpl {
         dto.setCustomerName(reservation.getCustomerName());
         dto.setReservationDate(reservation.getReservationDate().toString());
         dto.setNumberOfPeople(reservation.getNumberOfPeople());
-        // Add companyId to the DTO
-        dto.setCompanyId(reservation.getCompany().getId());
+
+        // Set both companyId and companyName in the DTO
+        if (reservation.getCompany() != null) {
+            dto.setCompanyId(reservation.getCompany().getId());
+            dto.setCompanyName(reservation.getCompany().getName());  // Set companyName
+        } else {
+            dto.setCompanyName("Unknown Company");  // Default value if no company is set
+        }
+
         return dto;
     }
 
@@ -82,7 +90,7 @@ public class ReservationServiceImpl {
         reservation.setReservationDate(LocalDate.parse(dto.getReservationDate()));
         reservation.setNumberOfPeople(dto.getNumberOfPeople());
 
-        // Fetch the company (restaurant) entity
+
         Company company = companyRepository.findById(dto.getCompanyId())
                 .orElseThrow(() -> new IllegalArgumentException("Restaurant not found with id: " + dto.getCompanyId()));
         reservation.setCompany(company);

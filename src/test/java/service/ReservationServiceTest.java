@@ -105,7 +105,7 @@ class ReservationServiceTest {
         reservation.setCustomerName("John Doe");
         reservation.setReservationDate(java.time.LocalDate.of(2024, 9, 24));
         reservation.setNumberOfPeople(4);
-        reservation.setCompany(mockCompany); // Assign the mock Company
+        reservation.setCompany(mockCompany);
 
         when(reservationRepository.findById(reservation.getId())).thenReturn(Optional.of(reservation));
 

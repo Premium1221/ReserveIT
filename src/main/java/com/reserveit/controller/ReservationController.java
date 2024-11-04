@@ -1,40 +1,38 @@
 package com.reserveit.controller;
 
 import com.reserveit.dto.ReservationDto;
-import com.reserveit.service.impl.ReservationServiceImpl;
+import com.reserveit.service.ReservationService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.UUID;
 
 @CrossOrigin(origins = "http://localhost:5204")
 @RestController
 @RequestMapping("/api/reservations")
 public class ReservationController {
 
-    private final ReservationServiceImpl reservationServiceImpl;
+    private final ReservationService reservationService;
 
-
-    public ReservationController(ReservationServiceImpl reservationServiceImpl) {
-        this.reservationServiceImpl = reservationServiceImpl;
+    public ReservationController(ReservationService reservationService) {
+        this.reservationService = reservationService;
     }
 
     @PostMapping
     public ResponseEntity<ReservationDto> createReservation(@RequestBody ReservationDto reservationDto) {
-        ReservationDto savedReservation = reservationServiceImpl.createReservation(reservationDto);
+        ReservationDto savedReservation = reservationService.createReservation(reservationDto);
         return ResponseEntity.status(201).body(savedReservation);
     }
 
     @GetMapping
     public ResponseEntity<List<ReservationDto>> getAllReservations() {
-        List<ReservationDto> reservations = reservationServiceImpl.getAllReservations();
+        List<ReservationDto> reservations = reservationService.getAllReservations();
         return ResponseEntity.ok(reservations);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ReservationDto> updateReservation(@PathVariable Long   id, @RequestBody ReservationDto reservationDto) {
-        ReservationDto updatedReservation = reservationServiceImpl.updateReservation(id, reservationDto);
+    public ResponseEntity<ReservationDto> updateReservation(@PathVariable Long id, @RequestBody ReservationDto reservationDto) {
+        ReservationDto updatedReservation = reservationService.updateReservation(id, reservationDto);
         return ResponseEntity.ok(updatedReservation);
     }
 }

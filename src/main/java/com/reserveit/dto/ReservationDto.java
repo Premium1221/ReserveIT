@@ -10,6 +10,16 @@ public class ReservationDto {
     private int numberOfPeople;
     private UUID companyId;
 
+    public String getCompanyName() {
+        return companyName;
+    }
+
+    public void setCompanyName(String companyName) {
+        this.companyName = companyName;
+    }
+
+    private String companyName;
+
     public UUID getCompanyId() {
         return companyId;
     }
