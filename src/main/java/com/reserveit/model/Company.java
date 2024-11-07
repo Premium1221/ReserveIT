@@ -1,12 +1,8 @@
 package com.reserveit.model;
 
 import jakarta.persistence.*;
-import jakarta.persistence.Table;
 import jakarta.validation.constraints.*;
-
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -17,8 +13,8 @@ public class Company {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
-    @Column(nullable = false)
     @NotBlank(message = "Company name is required")
+    @Column(nullable = false)
     private String name;
 
     private String address;
@@ -36,7 +32,7 @@ public class Company {
 
     private String pictureUrl;
 
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "company_categories",
             joinColumns = @JoinColumn(name = "company_id"),
@@ -45,28 +41,10 @@ public class Company {
     private Set<Category> categories = new HashSet<>();
 
     @OneToMany(mappedBy = "company", cascade = CascadeType.ALL)
-    private List<DiningTable> tables = new ArrayList<>();
+    private Set<DiningTable> tables = new HashSet<>();
 
-    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL)
-    private List<Reservation> reservations = new ArrayList<>();
-
-    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL)
-    private List<Staff> staff = new ArrayList<>();
-
-    // Helper methods
-    public void addCategory(Category category) {
-        categories.add(category);
-        category.getCompanies().add(this);
-    }
-
-    public void removeCategory(Category category) {
-        categories.remove(category);
-        category.getCompanies().remove(this);
-    }
-
-    public boolean hasCategory(String categoryName) {
-        return categories.stream()
-                .anyMatch(category -> category.getName().equalsIgnoreCase(categoryName));
+    // Constructors
+    public Company() {
     }
 
     // Getters and Setters
@@ -134,27 +112,11 @@ public class Company {
         this.categories = categories;
     }
 
-    public List<DiningTable> getTables() {
+    public Set<DiningTable> getTables() {
         return tables;
     }
 
-    public void setTables(List<DiningTable> tables) {
+    public void setTables(Set<DiningTable> tables) {
         this.tables = tables;
-    }
-
-    public List<Reservation> getReservations() {
-        return reservations;
-    }
-
-    public void setReservations(List<Reservation> reservations) {
-        this.reservations = reservations;
-    }
-
-    public List<Staff> getStaff() {
-        return staff;
-    }
-
-    public void setStaff(List<Staff> staff) {
-        this.staff = staff;
     }
 }

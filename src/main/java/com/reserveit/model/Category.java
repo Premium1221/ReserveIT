@@ -19,6 +19,14 @@ public class Category {
     @ManyToMany(mappedBy = "categories")
     private Set<Company> companies = new HashSet<>();
 
+    // Constructors
+    public Category() {
+    }
+
+    public Category(String name) {
+        this.name = name;
+    }
+
     // Getters and Setters
     public Long getId() {
         return id;

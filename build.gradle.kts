@@ -21,18 +21,17 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-security")
 
+    // MySQL Driver - Add this line
+    implementation("com.mysql:mysql-connector-j:8.0.33")
+
     // Jackson for JSON processing
     implementation("com.fasterxml.jackson.core:jackson-databind")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
 
-    // HSQLDB In-Memory Database
-    implementation("org.hsqldb:hsqldb:2.6.1")
-    implementation("com.h2database:h2")
-
     // AWS S3 SDK
     implementation("software.amazon.awssdk:s3:2.20.0")
 
-    // Add Jakarta Validation API and Hibernate Validator
+    // Validation
     implementation("jakarta.validation:jakarta.validation-api:3.0.0")
     implementation("org.hibernate.validator:hibernate-validator:7.0.0.Final")
 
@@ -41,7 +40,6 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
 }
-
 
 java {
     toolchain {

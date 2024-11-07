@@ -41,6 +41,10 @@ public class DiningTable {
     @JoinColumn(name = "company_id", nullable = false)
     private Company company;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "configuration_id")
+    private TableConfiguration configuration;
+
     @OneToMany(mappedBy = "diningTable", cascade = CascadeType.ALL)
     private List<Reservation> reservations = new ArrayList<>();
 
@@ -98,14 +102,23 @@ public class DiningTable {
     }
 
     public boolean isAvailableForDateTime(LocalDateTime dateTime) {
-        return reservations.stream()
-                .noneMatch(reservation ->
-                        reservation.getReservationDate().equals(dateTime) &&
-                                reservation.getStatus() != Reservation.ReservationStatus.CANCELLED
-                );
+        return status == TableStatus.AVAILABLE &&
+                reservations.stream()
+                        .noneMatch(reservation ->
+                                reservation.getReservationDate().equals(dateTime) &&
+                                        reservation.getStatus() != Reservation.ReservationStatus.CANCELLED
+                        );
     }
 
-    // Getters and Setters
+
+    public TableConfiguration getConfiguration() {
+        return configuration;
+    }
+
+    public void setConfiguration(TableConfiguration configuration) {
+        this.configuration = configuration;
+    }
+
     public Long getId() {
         return id;
     }

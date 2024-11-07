@@ -10,9 +10,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
 @Service
 public class CompanyServiceImpl implements CompanyService {
     private final CompanyRepository companyRepository;
+
     public CompanyServiceImpl(CompanyRepository companyRepository) {
         this.companyRepository = companyRepository;
     }
@@ -30,8 +32,9 @@ public class CompanyServiceImpl implements CompanyService {
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
+
     @Override
-    public CompanyDto getCompanyById(UUID id){
+    public CompanyDto getCompanyById(UUID id) {
         return companyRepository.findById(id)
                 .map(this::convertToDto)
                 .orElseThrow(() -> new IllegalArgumentException("Company not found"));
@@ -41,6 +44,7 @@ public class CompanyServiceImpl implements CompanyService {
     public void deleteCompany(UUID id) {
         companyRepository.deleteById(id);
     }
+
     @Override
     public void updateCompany(UUID id, CompanyDto companyDto) {
         Optional<Company> existingCompanyOptional = companyRepository.findById(id);
@@ -65,12 +69,19 @@ public class CompanyServiceImpl implements CompanyService {
                 existingCompany.setEmail(companyDto.getEmail());
                 isUpdated = true;
             }
-            if (!existingCompany.getTags().equals(companyDto.getTags())) {
-                existingCompany.setTags(companyDto.getTags());
+            if (!existingCompany.getCategories().equals(companyDto.getCategories())) {
+                existingCompany.setCategories(companyDto.getCategories());
+                isUpdated = true;
+            }
+            if (existingCompany.getRating() != companyDto.getRating()) {
+                existingCompany.setRating(companyDto.getRating());
+                isUpdated = true;
+            }
+            if (!existingCompany.getPictureUrl().equals(companyDto.getPictureUrl())) {
+                existingCompany.setPictureUrl(companyDto.getPictureUrl());
                 isUpdated = true;
             }
 
-            // Only save if changes were made
             if (isUpdated) {
                 companyRepository.save(existingCompany);
             }
@@ -79,13 +90,15 @@ public class CompanyServiceImpl implements CompanyService {
         }
     }
 
-
-
     private Company convertToEntity(CompanyDto companyDto) {
         Company company = new Company();
         company.setId(companyDto.getId());
         company.setName(companyDto.getName());
-        company.setTags(companyDto.getTags());
+        company.setAddress(companyDto.getAddress());
+        company.setPhone(companyDto.getPhone());
+        company.setEmail(companyDto.getEmail());
+        company.setCategories(companyDto.getCategories());
+        company.setRating(companyDto.getRating());
         company.setPictureUrl(companyDto.getPictureUrl());
         return company;
     }
@@ -94,7 +107,11 @@ public class CompanyServiceImpl implements CompanyService {
         CompanyDto companyDto = new CompanyDto();
         companyDto.setId(company.getId());
         companyDto.setName(company.getName());
-        companyDto.setTags(company.getTags());
+        companyDto.setAddress(company.getAddress());
+        companyDto.setPhone(company.getPhone());
+        companyDto.setEmail(company.getEmail());
+        companyDto.setCategories(company.getCategories());
+        companyDto.setRating(company.getRating());
         companyDto.setPictureUrl(company.getPictureUrl());
         return companyDto;
     }

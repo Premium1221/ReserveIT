@@ -1,7 +1,8 @@
 package com.reserveit.model;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,29 +14,31 @@ public class TableConfiguration {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank(message = "Configuration name is required")
+    @Column(nullable = false)
+    private String name;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "company_id", nullable = false)
     private Company company;
 
+    @OneToMany(mappedBy = "configuration", cascade = CascadeType.ALL)
+    private List<DiningTable> tables = new ArrayList<>();
+
     @Column(nullable = false)
-    private String name;  // e.g., "Weekend Layout", "Event Layout"
+    private boolean active = false;
+
+    // Constructors
+    public TableConfiguration() {
+    }
 
     // Getters and Setters
-
     public Long getId() {
         return id;
     }
 
     public void setId(Long id) {
         this.id = id;
-    }
-
-    public Company getCompany() {
-        return company;
-    }
-
-    public void setCompany(Company company) {
-        this.company = company;
     }
 
     public String getName() {
@@ -46,12 +49,12 @@ public class TableConfiguration {
         this.name = name;
     }
 
-    public boolean isActive() {
-        return isActive;
+    public Company getCompany() {
+        return company;
     }
 
-    public void setActive(boolean active) {
-        isActive = active;
+    public void setCompany(Company company) {
+        this.company = company;
     }
 
     public List<DiningTable> getTables() {
@@ -62,10 +65,22 @@ public class TableConfiguration {
         this.tables = tables;
     }
 
-    @Column(nullable = false)
-    private boolean isActive = false;
+    public boolean isActive() {
+        return active;
+    }
 
-    @OneToMany(mappedBy = "configuration", cascade = CascadeType.ALL)
-    private List<DiningTable> tables = new ArrayList<>();
+    public void setActive(boolean active) {
+        this.active = active;
+    }
 
+    // Helper methods
+    public void addTable(DiningTable table) {
+        tables.add(table);
+        table.setConfiguration(this);
+    }
+
+    public void removeTable(DiningTable table) {
+        tables.remove(table);
+        table.setConfiguration(null);
+    }
 }

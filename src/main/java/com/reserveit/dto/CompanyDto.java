@@ -1,6 +1,8 @@
 package com.reserveit.dto;
 
-import java.util.List;
+import com.reserveit.model.Category;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 public class CompanyDto {
@@ -9,18 +11,15 @@ public class CompanyDto {
     private String address;
     private String phone;
     private String email;
-    private List<String> tags;
-
-    public String getPictureUrl() {
-        return pictureUrl;
-    }
-
-    public void setPictureUrl(String pictureUrl) {
-        this.pictureUrl = pictureUrl;
-    }
-
+    private Set<Category> categories = new HashSet<>();
+    private Float rating;
     private String pictureUrl;
 
+    // Constructors
+    public CompanyDto() {
+    }
+
+    // Getters and Setters
     public UUID getId() {
         return id;
     }
@@ -61,11 +60,27 @@ public class CompanyDto {
         this.email = email;
     }
 
-    public List<String> getTags() {
-        return tags;
+    public Set<Category> getCategories() {
+        return categories;
     }
 
-    public void setTags(List<String> tags) {
-        this.tags = tags;
+    public void setCategories(Set<Category> categories) {
+        this.categories = categories;
+    }
+
+    public Float getRating() {
+        return rating;
+    }
+
+    public void setRating(Float rating) {
+        this.rating = rating;
+    }
+
+    public String getPictureUrl() {
+        return pictureUrl;
+    }
+
+    public void setPictureUrl(String pictureUrl) {
+        this.pictureUrl = pictureUrl;
     }
 }
