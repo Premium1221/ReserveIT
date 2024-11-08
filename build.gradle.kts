@@ -36,6 +36,9 @@ dependencies {
     // Testing
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.junit.jupiter:junit-jupiter")
+
+    //Flyway
+    implementation("org.flywaydb:flyway-core:9.22.0")
 }
 
 java {
