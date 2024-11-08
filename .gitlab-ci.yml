@@ -3,20 +3,28 @@ image: openjdk:17
 stages:
   - build
   - test
-  - sonarqube
+  - analyze
+
+variables:
+
+cache:
+  key: "$CI_COMMIT_REF_NAME"
+  paths:
+    - .gradle/wrapper
+    - .gradle/caches
 
 build:
   stage: build
   script:
-    - gradle build
+    - ./gradlew clean build
 
 test:
   stage: test
   script:
-    - gradle test
+    - ./gradlew test
 
 sonarqube-check:
-  stage: sonarqube
+  stage: analyze
   image: gradle:7.4.2-jdk17
   script:
     - ./gradlew sonarqube
