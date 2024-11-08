@@ -5,7 +5,7 @@ stages:
   - test
   - analyze
 
-variables:
+
 
 cache:
   key: "$CI_COMMIT_REF_NAME"
@@ -27,5 +27,6 @@ sonarqube-check:
   stage: analyze
   image: gradle:7.4.2-jdk17
   script:
+    - ./gradlew build
     - ./gradlew sonarqube
   allow_failure: true
