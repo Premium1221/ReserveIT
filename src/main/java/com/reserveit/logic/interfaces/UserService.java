@@ -1,4 +1,4 @@
-package com.reserveit.service;
+package com.reserveit.logic.interfaces;
 
 
 import com.reserveit.dto.UserDto;

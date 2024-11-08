@@ -1,7 +1,7 @@
 package com.reserveit.controller;
 
 import com.reserveit.dto.CompanyDto;
-import com.reserveit.service.CompanyService;
+import com.reserveit.logic.interfaces.CompanyService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 

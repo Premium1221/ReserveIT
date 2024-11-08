@@ -1,12 +1,12 @@
 package service;
 
+import com.reserveit.database.interfaces.ICompanyDatabase;
+import com.reserveit.database.interfaces.IDiningTableDatabase;
+import com.reserveit.database.interfaces.IReservationDatabase;
 import com.reserveit.dto.ReservationDto;
 import com.reserveit.model.Company;
 import com.reserveit.model.Reservation;
-import com.reserveit.repository.CompanyRepository;
-import com.reserveit.repository.DiningTableRepository;
-import com.reserveit.repository.ReservationRepository;
-import com.reserveit.service.impl.ReservationServiceImpl;
+import com.reserveit.logic.impl.ReservationServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -26,13 +26,13 @@ import static org.mockito.Mockito.*;
 class ReservationServiceTest {
 
     @Mock
-    private ReservationRepository reservationRepository;
+    private IReservationDatabase reservationDb;
 
     @Mock
-    private CompanyRepository companyRepository;
+    private ICompanyDatabase companyDb;
 
     @Mock
-    private DiningTableRepository tableRepository;
+    private IDiningTableDatabase tableDb;
 
     private ReservationServiceImpl reservationServiceImpl;
     private Company mockCompany;
@@ -42,9 +42,9 @@ class ReservationServiceTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
         reservationServiceImpl = new ReservationServiceImpl(
-                reservationRepository,
-                companyRepository,
-                tableRepository
+                reservationDb,
+                companyDb,
+                tableDb
         );
 
         mockCompany = new Company();
@@ -72,8 +72,8 @@ class ReservationServiceTest {
         savedReservation.setNumberOfPeople(4);
         savedReservation.setCompany(mockCompany);
 
-        when(companyRepository.findById(companyId)).thenReturn(Optional.of(mockCompany));
-        when(reservationRepository.save(any(Reservation.class))).thenReturn(savedReservation);
+        when(companyDb.findById(companyId)).thenReturn(mockCompany);
+        when(reservationDb.save(any(Reservation.class))).thenReturn(savedReservation);
 
         // Act
         ReservationDto result = reservationServiceImpl.createReservation(dto);
@@ -82,7 +82,7 @@ class ReservationServiceTest {
         assertNotNull(result);
         assertEquals("John Doe", result.getCustomerName());
         assertEquals(4, result.getNumberOfPeople());
-        verify(reservationRepository).save(any(Reservation.class));
+        verify(reservationDb).save(any(Reservation.class));
     }
 
     @Test
@@ -102,7 +102,7 @@ class ReservationServiceTest {
         reservation2.setNumberOfPeople(2);
         reservation2.setCompany(mockCompany);
 
-        when(reservationRepository.findAll()).thenReturn(Arrays.asList(reservation1, reservation2));
+        when(reservationDb.findAll()).thenReturn(Arrays.asList(reservation1, reservation2));
 
         // Act
         List<ReservationDto> reservations = reservationServiceImpl.getAllReservations();
@@ -133,8 +133,8 @@ class ReservationServiceTest {
         updateDto.setNumberOfPeople(5);
         updateDto.setCompanyId(mockCompany.getId());
 
-        when(reservationRepository.findById(reservationId)).thenReturn(Optional.of(existingReservation));
-        when(companyRepository.findById(mockCompany.getId())).thenReturn(Optional.of(mockCompany));
+        when(reservationDb.findById(reservationId)).thenReturn(Optional.of(existingReservation));
+        when(companyDb.findById(mockCompany.getId())).thenReturn(mockCompany);
 
         Reservation updatedReservation = new Reservation();
         updatedReservation.setId(reservationId);
@@ -143,7 +143,7 @@ class ReservationServiceTest {
         updatedReservation.setNumberOfPeople(5);
         updatedReservation.setCompany(mockCompany);
 
-        when(reservationRepository.save(any(Reservation.class))).thenReturn(updatedReservation);
+        when(reservationDb.save(any(Reservation.class))).thenReturn(updatedReservation);
 
         // Act
         ReservationDto result = reservationServiceImpl.updateReservation(reservationId, updateDto);
@@ -152,7 +152,7 @@ class ReservationServiceTest {
         assertNotNull(result);
         assertEquals("Jane Doe", result.getCustomerName());
         assertEquals(5, result.getNumberOfPeople());
-        verify(reservationRepository).findById(reservationId);
-        verify(reservationRepository).save(any(Reservation.class));
+        verify(reservationDb).findById(reservationId);
+        verify(reservationDb).save(any(Reservation.class));
     }
 }

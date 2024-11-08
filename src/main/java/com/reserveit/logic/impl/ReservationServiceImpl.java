@@ -1,41 +1,43 @@
-package com.reserveit.service.impl;
+package com.reserveit.logic.impl;
 
+import com.reserveit.database.interfaces.ICompanyDatabase;
+import com.reserveit.database.interfaces.IDiningTableDatabase;
+import com.reserveit.database.interfaces.IReservationDatabase;
 import com.reserveit.dto.ReservationDto;
 import com.reserveit.model.Company;
 import com.reserveit.model.Reservation;
 import com.reserveit.model.DiningTable;
-import com.reserveit.repository.CompanyRepository;
-import com.reserveit.repository.ReservationRepository;
-import com.reserveit.repository.DiningTableRepository;
-import com.reserveit.service.ReservationService;
+import com.reserveit.logic.interfaces.ReservationService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
 @Transactional
 public class ReservationServiceImpl implements ReservationService {
-    private final ReservationRepository reservationRepository;
-    private final CompanyRepository companyRepository;
-    private final DiningTableRepository tableRepository;
+    private final IReservationDatabase reservationDb;
+    private final ICompanyDatabase companyDb;
+    private final IDiningTableDatabase tableDb;
 
-    public ReservationServiceImpl(ReservationRepository reservationRepository,
-                                  CompanyRepository companyRepository,
-                                  DiningTableRepository tableRepository) {
-        this.reservationRepository = reservationRepository;
-        this.companyRepository = companyRepository;
-        this.tableRepository = tableRepository;
+    public ReservationServiceImpl(IReservationDatabase reservationDb,
+                                  ICompanyDatabase companyDb,
+                                  IDiningTableDatabase tableDb) {
+        this.reservationDb = reservationDb;
+        this.companyDb = companyDb;
+        this.tableDb = tableDb;
     }
     @Override
     public List<ReservationDto> getReservationsByCompany(UUID companyId) {
-        Company company = companyRepository.findById(companyId)
+        Optional<Company> optionalCompany = Optional.ofNullable(companyDb.findById(companyId));
+        Company company = optionalCompany
                 .orElseThrow(() -> new IllegalArgumentException("Company not found with id: " + companyId));
 
-        return reservationRepository.findByCompany(company)
+        return reservationDb.findByCompany(company)
                 .stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
@@ -43,10 +45,11 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Override
     public List<ReservationDto> getUpcomingReservations(UUID companyId) {
-        Company company = companyRepository.findById(companyId)
+        Optional<Company> optionalCompany = Optional.ofNullable(companyDb.findById(companyId));
+        Company company = optionalCompany
                 .orElseThrow(() -> new IllegalArgumentException("Company not found with id: " + companyId));
 
-        return reservationRepository.findByCompanyAndReservationDateAfterAndStatusNot(
+        return reservationDb.findByCompanyAndReservationDateAfterAndStatusNot(
                         company,
                         LocalDateTime.now(),
                         Reservation.ReservationStatus.CANCELLED)
@@ -57,13 +60,14 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Override
     public List<ReservationDto> getReservationsByDate(UUID companyId, LocalDateTime date) {
-        Company company = companyRepository.findById(companyId)
+        Optional<Company> optionalCompany = Optional.ofNullable(companyDb.findById(companyId));
+        Company company = optionalCompany
                 .orElseThrow(() -> new IllegalArgumentException("Company not found with id: " + companyId));
 
         LocalDateTime startOfDay = date.toLocalDate().atStartOfDay();
         LocalDateTime endOfDay = startOfDay.plusDays(1);
 
-        return reservationRepository.findByCompanyAndReservationDateBetween(
+        return reservationDb.findByCompanyAndReservationDateBetween(
                         company,
                         startOfDay,
                         endOfDay)
@@ -74,7 +78,7 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Override
     public boolean isTableAvailable(UUID companyId, Long tableId, LocalDateTime dateTime, int duration) {
-        DiningTable table = tableRepository.findById(tableId)
+        DiningTable table = tableDb.findById(tableId)
                 .orElseThrow(() -> new IllegalArgumentException("Table not found"));
 
         if (!table.getCompany().getId().equals(companyId)) {
@@ -86,7 +90,7 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Override
     public void checkInReservation(Long id) {
-        Reservation reservation = reservationRepository.findById(id)
+        Reservation reservation = reservationDb.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Reservation not found with id: " + id));
 
         if (reservation.getStatus() != Reservation.ReservationStatus.CONFIRMED) {
@@ -98,12 +102,12 @@ public class ReservationServiceImpl implements ReservationService {
         }
 
         reservation.setStatus(Reservation.ReservationStatus.COMPLETED);
-        reservationRepository.save(reservation);
+        reservationDb.save(reservation);
     }
 
     @Override
     public void checkOutReservation(Long id) {
-        Reservation reservation = reservationRepository.findById(id)
+        Reservation reservation = reservationDb.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Reservation not found with id: " + id));
 
         if (reservation.getStatus() != Reservation.ReservationStatus.COMPLETED) {
@@ -114,7 +118,7 @@ public class ReservationServiceImpl implements ReservationService {
             reservation.getDiningTable().setStatus(DiningTable.TableStatus.AVAILABLE);
         }
 
-        reservationRepository.save(reservation);
+        reservationDb.save(reservation);
     }
     @Override
     public ReservationDto createReservation(ReservationDto reservationDto) {
@@ -127,7 +131,8 @@ public class ReservationServiceImpl implements ReservationService {
         }
 
         // Find the company
-        Company company = companyRepository.findById(reservationDto.getCompanyId())
+        Optional<Company> optionalCompany = Optional.ofNullable(companyDb.findById(reservationDto.getCompanyId()));
+        Company company = optionalCompany
                 .orElseThrow(() -> new IllegalArgumentException("Company not found with id: " + reservationDto.getCompanyId()));
 
         Reservation reservation = convertToEntity(reservationDto);
@@ -136,7 +141,7 @@ public class ReservationServiceImpl implements ReservationService {
 
         // If a specific table is requested, validate and assign it
         if (reservationDto.getTableNumber() != null) {
-            DiningTable table = tableRepository.findByCompanyIdAndTableNumber(company.getId(), reservationDto.getTableNumber())
+            DiningTable table = tableDb.findByCompanyIdAndTableNumber(company.getId(), reservationDto.getTableNumber())
                     .orElseThrow(() -> new IllegalArgumentException("Table not found"));
 
             if (!table.isAvailableForDateTime(reservation.getReservationDate())) {
@@ -145,27 +150,28 @@ public class ReservationServiceImpl implements ReservationService {
             reservation.setDiningTable(table);
         }
 
-        Reservation savedReservation = reservationRepository.save(reservation);
+        Reservation savedReservation = reservationDb.save(reservation);
         return convertToDto(savedReservation);
     }
 
     @Override
     public List<ReservationDto> getAllReservations() {
-        return reservationRepository.findAll().stream()
+        return reservationDb.findAll().stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
 
     @Override
     public ReservationDto getReservationById(Long id) {
-        return reservationRepository.findById(id)
+        Optional<Reservation> optionalReservation = reservationDb.findById(id);
+        return optionalReservation
                 .map(this::convertToDto)
                 .orElseThrow(() -> new IllegalArgumentException("Reservation not found with id: " + id));
     }
 
     @Override
     public ReservationDto updateReservation(Long id, ReservationDto reservationDto) {
-        Reservation existingReservation = reservationRepository.findById(id)
+        Reservation existingReservation = reservationDb.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Reservation not found with id: " + id));
 
         // Check if the reservation can be modified
@@ -180,14 +186,15 @@ public class ReservationServiceImpl implements ReservationService {
 
         // Update company if changed
         if (!existingReservation.getCompany().getId().equals(reservationDto.getCompanyId())) {
-            Company newCompany = companyRepository.findById(reservationDto.getCompanyId())
+            Optional<Company> optionalCompany = Optional.ofNullable(companyDb.findById(reservationDto.getCompanyId()));
+            Company newCompany = optionalCompany
                     .orElseThrow(() -> new IllegalArgumentException("Company not found with id: " + reservationDto.getCompanyId()));
             existingReservation.setCompany(newCompany);
         }
 
         // Update table if specified
         if (reservationDto.getTableNumber() != null) {
-            DiningTable newTable = tableRepository.findByCompanyIdAndTableNumber(
+            DiningTable newTable = tableDb.findByCompanyIdAndTableNumber(
                             existingReservation.getCompany().getId(),
                             reservationDto.getTableNumber())
                     .orElseThrow(() -> new IllegalArgumentException("Table not found"));
@@ -198,13 +205,13 @@ public class ReservationServiceImpl implements ReservationService {
             existingReservation.setDiningTable(newTable);
         }
 
-        Reservation updatedReservation = reservationRepository.save(existingReservation);
+        Reservation updatedReservation = reservationDb.save(existingReservation);
         return convertToDto(updatedReservation);
     }
 
     @Override
     public void cancelReservation(Long id) {
-        Reservation reservation = reservationRepository.findById(id)
+        Reservation reservation = reservationDb.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Reservation not found with id: " + id));
 
         if (reservation.getStatus() == Reservation.ReservationStatus.CANCELLED) {
@@ -219,7 +226,7 @@ public class ReservationServiceImpl implements ReservationService {
         if (reservation.getDiningTable() != null) {
             reservation.getDiningTable().setStatus(DiningTable.TableStatus.AVAILABLE);
         }
-        reservationRepository.save(reservation);
+        reservationDb.save(reservation);
     }
 
 
@@ -234,8 +241,12 @@ public class ReservationServiceImpl implements ReservationService {
         ReservationDto dto = new ReservationDto();
         dto.setId(reservation.getId());
         dto.setCustomerName(reservation.getCustomerName());
+        dto.setCustomerEmail(reservation.getCustomerEmail());
+        dto.setCustomerPhone(reservation.getCustomerPhone());
         dto.setReservationDate(reservation.getReservationDate().toString());
         dto.setNumberOfPeople(reservation.getNumberOfPeople());
+        dto.setSpecialRequests(reservation.getSpecialRequests());
+        dto.setStatus(reservation.getStatus().toString());
 
         if (reservation.getCompany() != null) {
             dto.setCompanyId(reservation.getCompany().getId());
@@ -252,8 +263,11 @@ public class ReservationServiceImpl implements ReservationService {
     private Reservation convertToEntity(ReservationDto dto) {
         Reservation reservation = new Reservation();
         reservation.setCustomerName(dto.getCustomerName());
+        reservation.setCustomerEmail(dto.getCustomerEmail());
+        reservation.setCustomerPhone(dto.getCustomerPhone());
         reservation.setReservationDate(LocalDateTime.parse(dto.getReservationDate()));
         reservation.setNumberOfPeople(dto.getNumberOfPeople());
+        reservation.setSpecialRequests(dto.getSpecialRequests());
         return reservation;
     }
 }

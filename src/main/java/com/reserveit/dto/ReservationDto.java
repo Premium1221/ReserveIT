@@ -1,34 +1,37 @@
 package com.reserveit.dto;
 
+import jakarta.validation.constraints.*;
 import java.util.UUID;
 
 public class ReservationDto {
     private Long id;
+
+    @NotBlank(message = "Customer name is required")
     private String customerName;
+
+    @NotBlank(message = "Customer email is required")
+    @Email(message = "Invalid email format")
     private String customerEmail;
+
+    @Pattern(regexp = "^[0-9]{10}$", message = "Phone number must be 10 digits")
     private String customerPhone;
+
+    @NotNull(message = "Reservation date is required")
     private String reservationDate;
+
+    @Min(value = 1, message = "Number of people must be at least 1")
     private int numberOfPeople;
+
+    @NotNull(message = "Company ID is required")
     private UUID companyId;
+
     private String companyName;
     private String tableNumber;
     private String status;
     private String specialRequests;
 
     // Constructors
-    public ReservationDto() {
-    }
-
-    // Add helpful toString method
-    @Override
-    public String toString() {
-        return "ReservationDto{" +
-                "id=" + id +
-                ", customerName='" + customerName + '\'' +
-                ", reservationDate='" + reservationDate + '\'' +
-                ", companyName='" + companyName + '\'' +
-                '}';
-    }
+    public ReservationDto() {}
 
     // Getters and Setters
     public Long getId() {
