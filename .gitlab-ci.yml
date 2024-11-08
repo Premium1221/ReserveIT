@@ -19,5 +19,5 @@ sonarqube-check:
   stage: sonarqube
   image: gradle:7.4.2-jdk17
   script:
-    - gradle sonarqube
+    - ./gradlew sonarqube
   allow_failure: true

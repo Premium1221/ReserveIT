@@ -63,7 +63,7 @@ sonar {
         property("sonar.projectKey", "ReservationApp")
         property("sonar.host.url", "http://localhost:9000")
         property("sonar.token", "sqp_3a1753ca565f40e7a4ea9c0ad6f767b62aa81d81")
-        property("sonar.java.binaries", "build/classes")
+        property("sonar.java.binaries", "build/classes/java/main")
         property("sonar.exclusions", listOf(
             "**/MainApplication.java",
             "**/model/**"
