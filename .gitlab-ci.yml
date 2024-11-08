@@ -19,5 +19,5 @@ sonarqube-check:
   stage: sonarqube
   image: gradle:7.4.2-jdk17
   script:
-    - gradle sonarqube -Dsonar.projectKey=ReservationApp -Dsonar.host.url=http://localhost:9000 -Dsonar.login=sqp_3a1753ca565f40e7a4ea9c0ad6f767b62aa81d81
+    - gradle sonarqube
   allow_failure: true
