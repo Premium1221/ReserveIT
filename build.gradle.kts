@@ -13,8 +13,8 @@ repositories {
     mavenCentral()
 }
 
-springBoot {
-    mainClass.set("com.reserveit.MainApplication")
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
 }
 
 dependencies {
@@ -36,13 +36,22 @@ dependencies {
     // Testing
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.junit.jupiter:junit-jupiter")
-
-    //Flyway
-    implementation("org.flywaydb:flyway-core:9.22.0")
 }
 
-java {
-    sourceCompatibility = JavaVersion.VERSION_17
+tasks.withType<Test> {
+    useJUnitPlatform()
+}
+
+// Configure the bootJar task
+tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
+    mainClass.set("com.reserveit.MainApplication")
+    archiveBaseName.set("app")
+    archiveVersion.set("")
+}
+
+// Configure the jar task
+tasks.named<Jar>("jar") {
+    enabled = false
 }
 
 jacoco {
@@ -54,6 +63,7 @@ tasks.jacocoTestReport {
         xml.required.set(true)
         html.required.set(true)
     }
+    dependsOn(tasks.test)
 }
 
 tasks.test {
@@ -64,12 +74,19 @@ tasks.test {
 sonar {
     properties {
         property("sonar.projectKey", "ReservationApp")
+        property("sonar.projectName", "Reservation Management System")
         property("sonar.host.url", "http://localhost:9000")
-        property("sonar.token", "sqp_3a1753ca565f40e7a4ea9c0ad6f767b62aa81d81")
+        property("sonar.token", "sqp_9e61629775f0333b12fdbd9abaddad6f12370cd0")
         property("sonar.java.binaries", "build/classes/java/main")
+        property("sonar.sources", "src/main/java")
+        property("sonar.tests", "src/test/java")
+        property("sonar.java.coveragePlugin", "jacoco")
+        property("sonar.coverage.jacoco.xmlReportPaths", "${buildDir}/reports/jacoco/test/jacocoTestReport.xml")
         property("sonar.exclusions", listOf(
             "**/MainApplication.java",
-            "**/model/**"
+            "**/model/**",
+            "**/config/**",
+            "**/dto/**"
         ).joinToString(","))
     }
 }

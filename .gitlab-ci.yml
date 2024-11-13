@@ -1,11 +1,11 @@
-image: openjdk:17
+image: docker:latest
 
 stages:
   - build
   - test
   - analyze
-
-
+  - docker-build
+  - docker-push
 
 cache:
   key: "$CI_COMMIT_REF_NAME"
@@ -15,11 +15,13 @@ cache:
 
 build:
   stage: build
+  image: openjdk:17
   script:
     - ./gradlew clean build
 
 test:
   stage: test
+  image: openjdk:17
   script:
     - ./gradlew test
 
@@ -30,3 +32,22 @@ sonarqube-check:
     - ./gradlew build
     - ./gradlew sonarqube
   allow_failure: true
+
+docker-build:
+  stage: docker-build
+  services:
+    - docker:dind
+  script:
+    - docker build -t your-docker-hub-username/your-image-name:$CI_COMMIT_SHA .
+    - docker login -u $DOCKER_HUB_USERNAME -p $DOCKER_HUB_PASSWORD
+    - docker push your-docker-hub-username/your-image-name:$CI_COMMIT_SHA
+
+docker-push:
+  stage: docker-push
+  services:
+    - docker:dind
+  script:
+    - docker pull your-docker-hub-username/your-image-name:$CI_COMMIT_SHA
+    - docker tag your-docker-hub-username/your-image-name:$CI_COMMIT_SHA your-docker-hub-username/your-image-name:latest
+    - docker login -u $DOCKER_HUB_USERNAME -p $DOCKER_HUB_PASSWORD
+    - docker push your-docker-hub-username/your-image-name:latest
