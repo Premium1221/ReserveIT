@@ -29,7 +29,7 @@ sonarqube-check:
   image: gradle:7.4.2-jdk17
   script:
     - ./gradlew build
-    - ./gradlew sonarqube
+    - ./gradlew sonar
   allow_failure: true
 
 docker-build:
