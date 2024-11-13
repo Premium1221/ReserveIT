@@ -16,13 +16,13 @@ build:
   stage: build
   image: openjdk:17
   script:
-    - ./gradlew clean build
+    - gradle clean build
 
 test:
   stage: test
   image: openjdk:17
   script:
-    - ./gradlew test
+    - gradle test
 
 sonarqube-check:
   stage: analyze
