@@ -1,5 +1,12 @@
 image: docker:latest
 
+services:
+  - docker:dind
+
+variables:
+  DOCKER_HOST: tcp://docker:2375/
+  DOCKER_TLS_CERTDIR: ""
+
 stages:
   - build
   - test
@@ -12,19 +19,15 @@ cache:
     - .gradle/wrapper
     - .gradle/caches
 
-variables:
-  SONAR_HOST_URL: "http://localhost:9000"
-  SONAR_TOKEN: "sqp_9e61629775f0333b12fdbd9abaddad6f12370cd0"
-
 build:
   stage: build
-  image: openjdk:17
+  image: gradle:7.4.2-jdk17
   script:
     - ./gradlew clean build
 
 test:
   stage: test
-  image: openjdk:17
+  image: gradle:7.4.2-jdk17
   script:
     - ./gradlew test
 
@@ -32,12 +35,10 @@ sonarqube-check:
   stage: analyze
   image: gradle:7.4.2-jdk17
   script:
-    - ./gradlew sonarqube -Dsonar.login=sqp_9e61629775f0333b12fdbd9abaddad6f12370cd0
+    - ./gradlew sonarqube
   allow_failure: true
 
 docker-build:
   stage: docker-build
-  services:
-    - docker:dind
   script:
     - docker build -t your-image-name:$CI_COMMIT_SHA .
