@@ -32,7 +32,7 @@ sonarqube-check:
   stage: analyze
   image: gradle:7.4.2-jdk17
   script:
-    - ./gradlew sonarqube -Dsonar.login=$SONAR_TOKEN
+    - ./gradlew sonarqube -Dsonar.login=sqp_9e61629775f0333b12fdbd9abaddad6f12370cd0
   allow_failure: true
 
 docker-build:
