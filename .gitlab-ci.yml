@@ -1,74 +1,40 @@
-# Use Gradle with JDK 17 as base image
-image: gradle:7.4.2-jdk17
-
-variables:
-  # Disable Gradle daemon to ensure clean builds
-  GRADLE_OPTS: "-Dorg.gradle.daemon=false"
-  # Configure Gradle cache directory
-  GRADLE_USER_HOME: ".gradle"
+image: docker:latest
 
 stages:
   - build
   - test
   - analyze
-  - docker
+  - docker-build
 
-# Cache Gradle dependencies and build cache
 cache:
-  paths:
-    - .gradle/
-    - build/
   key: "$CI_COMMIT_REF_NAME"
+  paths:
+    - .gradle/wrapper
+    - .gradle/caches
 
-# Build the application
 build:
   stage: build
+  image: openjdk:17
   script:
-    - chmod +x ./gradlew
-    - ./gradlew assemble
-  artifacts:
-    paths:
-      - build/libs/*.jar
-    expire_in: 1 week
+    - ./gradlew clean build
 
-# Run tests and generate coverage report
 test:
   stage: test
+  image: openjdk:17
   script:
-    - chmod +x ./gradlew
-    - ./gradlew test jacocoTestReport
-  coverage: '/Total.*?([0-9]{1,3})%/'
-  artifacts:
-    reports:
-      junit: build/test-results/test/**/TEST-*.xml
-    paths:
-      - build/reports/jacoco/
-      - build/reports/tests/
-    expire_in: 1 week
+    - ./gradlew test
 
-# Run SonarQube analysis
-sonarqube:
+sonarqube-check:
   stage: analyze
+  image: gradle:7.4.2-jdk17
   script:
-    - chmod +x ./gradlew
+    - ./gradlew build
     - ./gradlew sonar
   allow_failure: true
-  only:
-    - main
-    - develop
-  dependencies:
-    - test
 
-# Build Docker image
-docker:
-  stage: docker
-  image: docker:latest
+docker-build:
+  stage: docker-build
   services:
     - docker:dind
-  variables:
-    DOCKER_TLS_CERTDIR: ""
-    DOCKER_HOST: tcp://docker:2375
   script:
-    - docker build -t reserveit:$CI_COMMIT_SHA .
-  only:
-    - main
+    - docker build -t your-image-name:$CI_COMMIT_SHA .
