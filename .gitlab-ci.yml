@@ -1,17 +1,11 @@
-image: docker:latest
-
-services:
-  - docker:dind
-
-variables:
-  DOCKER_HOST: tcp://docker:2375/
-  DOCKER_TLS_CERTDIR: ""
+image: openjdk:17
 
 stages:
   - build
   - test
   - analyze
-  - docker-build
+
+
 
 cache:
   key: "$CI_COMMIT_REF_NAME"
@@ -21,13 +15,11 @@ cache:
 
 build:
   stage: build
-  image: gradle:7.4.2-jdk17
   script:
     - ./gradlew clean build
 
 test:
   stage: test
-  image: gradle:7.4.2-jdk17
   script:
     - ./gradlew test
 
@@ -35,10 +27,6 @@ sonarqube-check:
   stage: analyze
   image: gradle:7.4.2-jdk17
   script:
+    - ./gradlew build
     - ./gradlew sonarqube
   allow_failure: true
-
-docker-build:
-  stage: docker-build
-  script:
-    - docker build -t your-image-name:$CI_COMMIT_SHA .
