@@ -12,6 +12,10 @@ cache:
     - .gradle/wrapper
     - .gradle/caches
 
+variables:
+  SONAR_HOST_URL: "http://localhost:9000"
+  SONAR_TOKEN: "sqp_9e61629775f0333b12fdbd9abaddad6f12370cd0"
+
 build:
   stage: build
   image: openjdk:17
@@ -28,8 +32,7 @@ sonarqube-check:
   stage: analyze
   image: gradle:7.4.2-jdk17
   script:
-    - ./gradlew build
-    - ./gradlew sonar
+    - ./gradlew sonarqube -Dsonar.login=$SONAR_TOKEN
   allow_failure: true
 
 docker-build:
