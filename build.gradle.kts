@@ -22,6 +22,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-security")
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
 
     // MySQL Driver
     implementation("com.mysql:mysql-connector-j:8.0.33")
@@ -36,26 +37,27 @@ dependencies {
     // Testing
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.junit.jupiter:junit-jupiter")
+    testImplementation("org.mockito:mockito-core")
 }
 
 tasks.withType<Test> {
     useJUnitPlatform()
+    finalizedBy(tasks.jacocoTestReport)
 }
 
-// Configure the bootJar task
 tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
     mainClass.set("com.reserveit.MainApplication")
     archiveBaseName.set("app")
     archiveVersion.set("")
 }
 
-// Configure the jar task
 tasks.named<Jar>("jar") {
     enabled = false
 }
 
 jacoco {
     toolVersion = "0.8.10"
+    reportsDirectory.set(layout.buildDirectory.dir("reports/jacoco"))
 }
 
 tasks.jacocoTestReport {
@@ -66,22 +68,18 @@ tasks.jacocoTestReport {
     dependsOn(tasks.test)
 }
 
-tasks.test {
-    useJUnitPlatform()
-    finalizedBy(tasks.jacocoTestReport)
-}
-
 sonar {
     properties {
         property("sonar.projectKey", "ReservationApp")
         property("sonar.projectName", "Reservation Management System")
-        property("sonar.host.url", "http://localhost:9000")
-        property("sonar.token", "sqp_9e61629775f0333b12fdbd9abaddad6f12370cd0")
+        property("sonar.host.url", System.getenv("SONAR_HOST_URL") ?: "http://localhost:9000")
+        property("sonar.token", System.getenv("SONAR_TOKEN") ?: "sqp_9e61629775f0333b12fdbd9abaddad6f12370cd0")
         property("sonar.java.binaries", "build/classes/java/main")
         property("sonar.sources", "src/main/java")
         property("sonar.tests", "src/test/java")
         property("sonar.java.coveragePlugin", "jacoco")
-        property("sonar.coverage.jacoco.xmlReportPaths", "${buildDir}/reports/jacoco/test/jacocoTestReport.xml")
+        property("sonar.coverage.jacoco.xmlReportPaths", "${layout.buildDirectory}/reports/jacoco/test/jacocoTestReport.xml")
+        property("sonar.qualitygate.wait", true)
         property("sonar.exclusions", listOf(
             "**/MainApplication.java",
             "**/model/**",
