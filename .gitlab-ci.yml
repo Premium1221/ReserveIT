@@ -17,20 +17,20 @@ build:
   stage: build
   image: openjdk:17
   script:
-    - ./gradlew clean build
+    - gradle clean build
 
 test:
   stage: test
   image: openjdk:17
   script:
-    - ./gradlew test
+    - gradle test
 
 sonarqube-check:
   stage: analyze
   image: gradle:7.4.2-jdk17
   script:
-    - ./gradlew build
-    - ./gradlew sonarqube
+    - gradle build
+    - gradle sonarqube
   allow_failure: true
 
 docker-build:
