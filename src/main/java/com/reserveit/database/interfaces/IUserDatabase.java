@@ -12,4 +12,5 @@ public interface IUserDatabase {
     List<User> findAll();
     Optional<User> findById(UUID id);
     void deleteById(UUID id);
+    boolean existsByEmail(String email);
 }

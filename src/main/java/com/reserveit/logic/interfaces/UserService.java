@@ -2,6 +2,7 @@ package com.reserveit.logic.interfaces;
 
 
 import com.reserveit.dto.UserDto;
+import com.reserveit.model.User;
 
 import java.util.List;
 import java.util.UUID;
@@ -14,5 +15,6 @@ public interface UserService {
    boolean updateUserDetails(UUID id, String newEmail,String newpPhoneNumber);
    int updatePassword(UUID id, String oldPassword, String newPassword);
     UserDto getUserByEmail(String email);
+    User getUserEntityByEmail(String username);
 
 }

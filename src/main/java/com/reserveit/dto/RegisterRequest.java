@@ -1,17 +1,32 @@
 package com.reserveit.dto;
 
-public class RegisterRequestDto {
+public class RegisterRequest {
     private String firstName;
     private String lastName;
     private String email;
     private String password;
     private String phoneNumber;
+    private String role;
 
-    // Constructors
-    public RegisterRequestDto() {
+    public RegisterRequest() {}
+
+    public RegisterRequest(String firstName, String lastName, String email, String password, String phoneNumber,String role) {
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.email = email;
+        this.password = password;
+        this.phoneNumber = phoneNumber;
+        this.role = role;
     }
 
-    // Getters and Setters
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
+    }
+
     public String getFirstName() {
         return firstName;
     }

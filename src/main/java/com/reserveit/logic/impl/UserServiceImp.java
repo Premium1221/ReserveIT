@@ -88,6 +88,15 @@ userDb.deleteById(id);
         }
         throw new IllegalArgumentException("User not found with email: " + email);
     }
+
+    @Override
+    public User getUserEntityByEmail(String email){
+        User user = userDb.findByEmail(email);
+        if (user != null) {
+            return user;
+        }
+        throw new IllegalArgumentException("User not found with email: " + email);
+    }
     private User convertToEntity(UserDto userDto) {
         User user = new User();
         user.setId(userDto.getId());

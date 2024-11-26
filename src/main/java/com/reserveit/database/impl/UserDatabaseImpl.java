@@ -41,4 +41,13 @@ public class UserDatabaseImpl implements IUserDatabase {
     public void deleteById(UUID id) {
         userRepository.deleteById(id);
     }
+
+    @Override
+    public  boolean existsByEmail(String email){
+        return userRepository.existsByEmail(email);
+
+    }
+
+
+
 }

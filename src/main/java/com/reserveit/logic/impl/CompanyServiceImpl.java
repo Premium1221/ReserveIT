@@ -12,7 +12,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
-public class CompanyServiceImpl implements CompanyService {
+public class    CompanyServiceImpl implements CompanyService {
     private final ICompanyDatabase companyDb;
 
     public CompanyServiceImpl(ICompanyDatabase companyDb) {

@@ -6,11 +6,12 @@ import com.reserveit.util.PasswordHasher;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin(origins = "http://localhost:5204")
+@CrossOrigin(origins = "http://localhost:5200")
 public class UserController {
     private final UserService userService;
     private final PasswordHasher passwordHasher;
@@ -51,5 +52,10 @@ public class UserController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
+    }
+    @GetMapping
+    public ResponseEntity<List<UserDto>> getAllUsers() {
+        List<UserDto> users = userService.getAllUsers();
+        return ResponseEntity.ok(users);
     }
 }

@@ -1,19 +1,16 @@
 package com.reserveit.dto;
 
-public class LoginRequestDto {
+public class AuthenticationRequest {
     private String email;
     private String password;
 
-    // Constructors
-    public LoginRequestDto() {
-    }
+    public AuthenticationRequest() {}
 
-    public LoginRequestDto(String email, String password) {
+    public AuthenticationRequest(String email, String password) {
         this.email = email;
         this.password = password;
     }
 
-    // Getters and Setters
     public String getEmail() {
         return email;
     }
