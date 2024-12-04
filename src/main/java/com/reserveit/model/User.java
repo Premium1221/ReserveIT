@@ -10,9 +10,8 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.io.Serializable;
 import java.util.Collection;
-import java.util.List;
+import java.util.Collections;
 import java.util.UUID;
 
 @Entity
@@ -48,9 +47,11 @@ public class User implements UserDetails {
     @Column(name = "role", nullable = false)
     private UserRole userRole = UserRole.CUSTOMER;
 
+    // Constructors
+    public User() {}
 
-    // Constructor
-    public User(String firstName, String lastName, String email, String hashedPassword, String phoneNumber, UserRole userRole) {
+    public User(String firstName, String lastName, String email, String hashedPassword,
+                String phoneNumber, UserRole userRole) {
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
@@ -58,27 +59,66 @@ public class User implements UserDetails {
         this.phoneNumber = phoneNumber;
         this.userRole = userRole;
     }
-     public User() {}
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + userRole.name()));
+    }
+
+    @Override
+    public String getPassword() {
+        return hashedPassword;
+    }
+
+    @Override
+    public String getUsername() {
+        return email;
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true;
+    }
 
     // Helper methods
     public String getFullName() {
         return firstName + " " + lastName;
     }
 
-    public boolean isAdmin() {
-        return userRole == UserRole.ADMIN;
+    // Role check methods
+    public boolean hasAdminAccess() {
+        return userRole.hasAdminAccess();
     }
 
-    public boolean isManager() {
-        return userRole == UserRole.MANAGER;
+    public boolean hasManagementAccess() {
+        return userRole.hasManagementAccess();
     }
 
-    public boolean isStaff() {
-        return userRole == UserRole.STAFF;
+    public boolean canManageReservations() {
+        return userRole.canManageReservations();
     }
 
     public boolean isCustomer() {
-        return userRole == UserRole.CUSTOMER;
+        return userRole.isCustomer();
+    }
+
+    public boolean isStaff() {
+        return userRole.isStaff();
     }
 
     // Getters and Setters
@@ -136,40 +176,5 @@ public class User implements UserDetails {
 
     public void setUserRole(UserRole userRole) {
         this.userRole = userRole;
-    }
-
-    @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROLE_" + userRole.name()));
-    }
-
-    @Override
-    public String getPassword() {
-        return hashedPassword;
-    }
-
-    @Override
-    public String getUsername() {
-        return email;
-    }
-
-    @Override
-    public boolean isAccountNonExpired() {
-        return true;
-    }
-
-    @Override
-    public boolean isAccountNonLocked() {
-        return true;
-    }
-
-    @Override
-    public boolean isCredentialsNonExpired() {
-        return true;
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return true;
     }
 }

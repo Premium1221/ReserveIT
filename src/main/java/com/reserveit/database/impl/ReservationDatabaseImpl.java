@@ -1,6 +1,6 @@
 package com.reserveit.database.impl;
 
-import com.reserveit.database.interfaces.IReservationDatabase;
+import com.reserveit.database.interfaces.ReservationDatabase;
 import com.reserveit.model.Company;
 import com.reserveit.model.Reservation;
 import com.reserveit.repository.ReservationRepository;
@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Component
-public class ReservationDatabaseImpl implements IReservationDatabase {
+public class ReservationDatabaseImpl implements ReservationDatabase {
     private final ReservationRepository reservationRepository;
 
     public ReservationDatabaseImpl(ReservationRepository reservationRepository) {

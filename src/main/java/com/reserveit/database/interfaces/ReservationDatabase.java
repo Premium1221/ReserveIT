@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-public interface IReservationDatabase {
+public interface ReservationDatabase {
     List<Reservation> findByCompany(Company company);
     List<Reservation> findByCompanyAndReservationDateAfterAndStatusNot(Company company, LocalDateTime date, Reservation.ReservationStatus status);
     List<Reservation> findByCompanyAndReservationDateBetween(Company company, LocalDateTime startDate, LocalDateTime endDate);

@@ -1,6 +1,6 @@
 package com.reserveit.database.impl;
 
-import com.reserveit.database.interfaces.ICompanyDatabase;
+import com.reserveit.database.interfaces.CompanyDatabase;
 import com.reserveit.model.Category;
 import com.reserveit.model.Company;
 import com.reserveit.repository.CompanyRepository;
@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Component
-public class CompanyDatabaseImpl implements ICompanyDatabase {
+public class CompanyDatabaseImpl implements CompanyDatabase {
     private final CompanyRepository companyRepository;
 
     public CompanyDatabaseImpl(CompanyRepository companyRepository) {
@@ -39,9 +39,15 @@ public class CompanyDatabaseImpl implements ICompanyDatabase {
 
     @Override
     public List<Company> findAll() {
-        return companyRepository.findAll();
+        try {
+            List<Company> companies = companyRepository.findAll();
+            System.out.println("Found " + companies.size() + " companies in database");
+            return companies;
+        } catch (Exception e) {
+            System.err.println("Error in CompanyDatabaseImpl.findAll(): " + e.getMessage());
+            throw e;
+        }
     }
-
     @Override
     public void deleteById(UUID id) {
         companyRepository.deleteById(id);

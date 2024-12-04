@@ -28,14 +28,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain) throws ServletException, IOException {
 
-        // Skip authentication for refresh token endpoint
-        if (request.getRequestURI().contains("/api/auth/refresh")) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
         final String authHeader = request.getHeader("Authorization");
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+
+        // Skip filtering for specific endpoints
+        if (shouldNotFilter(request) || authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -47,15 +43,16 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 User user = userService.getUserEntityByEmail(userEmail);
 
-                // Validate access token specifically
                 if (jwtUtil.validateAccessToken(accessToken, user)) {
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                             user,
                             null,
-                            user.getAuthorities()
+                            user.getAuthorities() // Only ROLE-based authorities
                     );
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
+                    logger.info("Injected Authorities: " + authToken.getAuthorities());
+
                 } else {
                     logger.warn("Invalid or expired access token for user: " + userEmail);
                     response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Access token is invalid or expired");
@@ -81,12 +78,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        // List of paths that don't require token validation
         String[] publicPaths = {
                 "/api/auth/login",
                 "/api/auth/register",
                 "/api/auth/refresh",
-
+                "/api/public",
+                "/api/companies",
+                "/actuator/health"
         };
 
         String path = request.getRequestURI();

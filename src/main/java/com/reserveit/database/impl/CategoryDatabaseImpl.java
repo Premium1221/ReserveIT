@@ -1,6 +1,6 @@
 package com.reserveit.database.impl;
 
-import com.reserveit.database.interfaces.ICategoryDatabase;
+import com.reserveit.database.interfaces.CategoryDatabase;
 import com.reserveit.model.Category;
 import com.reserveit.repository.CategoryRepository;
 import org.springframework.stereotype.Component;
@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 import java.util.Optional;
 
 @Component
-public class CategoryDatabaseImpl implements ICategoryDatabase {
+public class CategoryDatabaseImpl implements CategoryDatabase {
     private final CategoryRepository categoryRepository;
 
     public CategoryDatabaseImpl(CategoryRepository categoryRepository) {

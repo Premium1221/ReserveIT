@@ -1,20 +1,24 @@
 package com.reserveit.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.reserveit.model.Category;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class CompanyDto {
     private UUID id;
     private String name;
     private String address;
     private String phone;
     private String email;
+
+    @JsonIgnoreProperties({"companies"})
     private Set<Category> categories = new HashSet<>();
+
     private Float rating;
     private String pictureUrl;
-
     // Constructors
     public CompanyDto() {
     }

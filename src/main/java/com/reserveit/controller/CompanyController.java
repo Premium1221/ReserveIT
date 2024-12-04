@@ -2,9 +2,11 @@ package com.reserveit.controller;
 
 import com.reserveit.dto.CompanyDto;
 import com.reserveit.logic.interfaces.CompanyService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -12,18 +14,26 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/companies")
-@CrossOrigin(origins = "http://localhost:5200")
+@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5200", "http://localhost:3000"," http://145.93.93.110:5200"},
+        allowCredentials = "true")
 public class CompanyController {
     private final CompanyService companyService;
 
     public CompanyController(CompanyService companyService) {
         this.companyService = companyService;
     }
-
     @GetMapping
-    public ResponseEntity<List<CompanyDto>> getAllCompanies() {
-        List<CompanyDto> companies = companyService.getAllCompanies();
-        return ResponseEntity.ok(companies);
+    public ResponseEntity<?> getAllCompanies() {
+        try {
+            List<CompanyDto> companies = companyService.getAllCompanies();
+            return ResponseEntity.ok(companies);
+        } catch (Exception e) {
+            // Log the error
+            e.printStackTrace();
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error fetching companies: " + e.getMessage());
+        }
     }
 
     @PostMapping

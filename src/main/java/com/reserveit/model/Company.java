@@ -1,5 +1,6 @@
 package com.reserveit.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import java.util.HashSet;
@@ -32,7 +33,7 @@ public class Company {
 
     private String pictureUrl;
 
-    @ManyToMany(fetch = FetchType.LAZY)
+    @ManyToMany(fetch = FetchType.EAGER)  // Change to EAGER loading for categories
     @JoinTable(
             name = "company_categories",
             joinColumns = @JoinColumn(name = "company_id"),
@@ -40,7 +41,8 @@ public class Company {
     )
     private Set<Category> categories = new HashSet<>();
 
-    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore  // Ignore tables in JSON serialization
     private Set<DiningTable> tables = new HashSet<>();
 
     // Constructors

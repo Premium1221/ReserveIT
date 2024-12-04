@@ -1,8 +1,8 @@
 package com.reserveit.logic.impl;
 
-import com.reserveit.database.interfaces.ICompanyDatabase;
-import com.reserveit.database.interfaces.IDiningTableDatabase;
-import com.reserveit.database.interfaces.IReservationDatabase;
+import com.reserveit.database.interfaces.CompanyDatabase;
+import com.reserveit.database.interfaces.DiningTableDatabase;
+import com.reserveit.database.interfaces.ReservationDatabase;
 import com.reserveit.dto.ReservationDto;
 import com.reserveit.model.Company;
 import com.reserveit.model.Reservation;
@@ -20,13 +20,13 @@ import java.util.stream.Collectors;
 @Service
 @Transactional
 public class ReservationServiceImpl implements ReservationService {
-    private final IReservationDatabase reservationDb;
-    private final ICompanyDatabase companyDb;
-    private final IDiningTableDatabase tableDb;
+    private final ReservationDatabase reservationDb;
+    private final CompanyDatabase companyDb;
+    private final DiningTableDatabase tableDb;
 
-    public ReservationServiceImpl(IReservationDatabase reservationDb,
-                                  ICompanyDatabase companyDb,
-                                  IDiningTableDatabase tableDb) {
+    public ReservationServiceImpl(ReservationDatabase reservationDb,
+                                  CompanyDatabase companyDb,
+                                  DiningTableDatabase tableDb) {
         this.reservationDb = reservationDb;
         this.companyDb = companyDb;
         this.tableDb = tableDb;

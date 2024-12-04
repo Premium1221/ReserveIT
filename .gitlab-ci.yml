@@ -1,40 +1,47 @@
-image: docker:latest
-
 stages:
   - build
   - test
-  - analyze
-  - docker-build
+  - sonar
+  - docker
 
-cache:
-  key: "$CI_COMMIT_REF_NAME"
-  paths:
-    - .gradle/wrapper
-    - .gradle/caches
-
+# Build the application
 build:
   stage: build
-  image: openjdk:17
+  image: gradle:7.4-jdk17
   script:
-    - gradle clean build
+    - gradle build
+  artifacts:
+    paths:
+      - build/libs/*.jar
 
+# Run tests
 test:
   stage: test
-  image: openjdk:17
+  image: gradle:7.4-jdk17
   script:
     - gradle test
+  artifacts:
+    reports:
+      junit: build/test-results/test/**/TEST-*.xml
 
-sonarqube-check:
-  stage: analyze
-  image: gradle:7.4.2-jdk17
+# Run SonarQube analysis
+sonar:
+  stage: sonar
+  image: gradle:7.4-jdk17
   script:
-    - ./gradlew build
-    - ./gradlew sonar
-  allow_failure: true
+    - gradle sonar
+  only:
+    - main
 
-docker-build:
-  stage: docker-build
+# Build Docker image
+docker:
+  stage: docker
+  image: docker:latest
   services:
     - docker:dind
   script:
-    - docker build -t your-image-name:$CI_COMMIT_SHA .
+    - docker build -t reserveit-app .
+    - docker tag reserveit-app:latest $CI_REGISTRY_IMAGE:latest
+    - docker push $CI_REGISTRY_IMAGE:latest
+  only:
+    - main

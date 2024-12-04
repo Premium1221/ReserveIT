@@ -1,6 +1,6 @@
 package com.reserveit.logic.impl;
 
-import com.reserveit.database.interfaces.ICompanyDatabase;
+import com.reserveit.database.interfaces.CompanyDatabase;
 import com.reserveit.dto.CompanyDto;
 import com.reserveit.model.Company;
 import com.reserveit.logic.interfaces.CompanyService;
@@ -13,9 +13,9 @@ import java.util.stream.Collectors;
 
 @Service
 public class    CompanyServiceImpl implements CompanyService {
-    private final ICompanyDatabase companyDb;
+    private final CompanyDatabase companyDb;
 
-    public CompanyServiceImpl(ICompanyDatabase companyDb) {
+    public CompanyServiceImpl(CompanyDatabase companyDb) {
         this.companyDb = companyDb;
     }
 
@@ -28,9 +28,16 @@ public class    CompanyServiceImpl implements CompanyService {
 
     @Override
     public List<CompanyDto> getAllCompanies() {
-        return companyDb.findAll().stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
+        try {
+            List<Company> companies = companyDb.findAll();
+            return companies.stream()
+                    .map(this::convertToDto)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            System.out.println("Error fetching companies: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     @Override

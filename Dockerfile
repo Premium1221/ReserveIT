@@ -1,13 +1,11 @@
-# Build stage
-FROM gradle:7.4-jdk17 AS build
+# Backend Dockerfile
+FROM gradle:7.4-jdk17-alpine AS build
 WORKDIR /app
 COPY . .
-RUN gradle bootJar --no-daemon --info
+RUN gradle bootJar --no-daemon
 
-# Run stage
 FROM openjdk:17-jdk-slim
 WORKDIR /app
-COPY --from=build /app/build/libs/app.jar ./app.jar
-RUN ls -la  # Verify the jar exists
+COPY --from=build /app/build/libs/*.jar app.jar
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]

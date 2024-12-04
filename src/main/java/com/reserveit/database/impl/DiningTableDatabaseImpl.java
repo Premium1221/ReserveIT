@@ -1,6 +1,6 @@
 package com.reserveit.database.impl;
 
-import com.reserveit.database.interfaces.IDiningTableDatabase;
+import com.reserveit.database.interfaces.DiningTableDatabase;
 import com.reserveit.model.DiningTable;
 import com.reserveit.repository.DiningTableRepository;
 import org.springframework.stereotype.Component;
@@ -11,7 +11,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Component
-public class DiningTableDatabaseImpl implements IDiningTableDatabase {
+public class DiningTableDatabaseImpl implements DiningTableDatabase {
     private final DiningTableRepository diningTableRepository;
 
     public DiningTableDatabaseImpl(DiningTableRepository diningTableRepository) {

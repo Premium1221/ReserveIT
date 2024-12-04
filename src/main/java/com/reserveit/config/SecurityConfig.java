@@ -1,4 +1,4 @@
-package com.reserveit;
+package com.reserveit.config;
 
 import com.reserveit.util.JwtAuthFilter;
 import org.springframework.context.annotation.Bean;
@@ -26,9 +26,11 @@ import java.util.Arrays;
 public class SecurityConfig {
     private final JwtAuthFilter jwtAuthFilter;
 
-    // Define public endpoints
+    //  public endpoints
     private static final String[] PUBLIC_ENDPOINTS = {
-            "/api/auth/**",
+            "/api/auth/login",
+            "/api/auth/register",
+            "/api/auth/refresh",
             "/api/users/register",
             "/api/users/login",
             "/v3/api-docs/**",
@@ -36,10 +38,18 @@ public class SecurityConfig {
             "/actuator/health"
     };
 
-    // Define admin endpoints
     private static final String[] ADMIN_ENDPOINTS = {
             "/api/admin/**",
-            "/api/users/**"  // Added to allow admin to manage users
+            "/api/users/**",
+            "/api/auth/register/admin"
+    };
+
+    private static final String[] MANAGEMENT_ENDPOINTS = {
+            "/api/management/**"
+    };
+
+    private static final String[] STAFF_ENDPOINTS = {
+            "/api/staff/**"
     };
 
     public SecurityConfig(JwtAuthFilter jwtAuthFilter) {
@@ -66,11 +76,14 @@ public class SecurityConfig {
                         // Admin endpoints
                         .requestMatchers(ADMIN_ENDPOINTS).hasRole("ADMIN")
 
-                        // Customer endpoints
-                        .requestMatchers("/api/reservations/**").hasAnyRole("CUSTOMER", "ADMIN")
-
                         // Management endpoints
-                        .requestMatchers("/api/management/**").hasAnyRole("MANAGER", "ADMIN")
+                        .requestMatchers(MANAGEMENT_ENDPOINTS).hasAnyRole("MANAGER", "ADMIN")
+
+                        // Staff endpoints
+                        .requestMatchers(STAFF_ENDPOINTS).hasAnyRole("STAFF", "MANAGER", "ADMIN")
+
+                        // Customer endpoints
+                        .requestMatchers("/api/reservations/**").hasAnyRole("CUSTOMER", "STAFF", "MANAGER", "ADMIN")
 
                         // All other requests need authentication
                         .anyRequest().authenticated()
@@ -86,43 +99,16 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-
-        // Allow multiple frontend origins
-        configuration.setAllowedOrigins(Arrays.asList(
-                "http://localhost:5173",  // Vite default
-                "http://localhost:5200"  // Your configured port
-        ));
-
-        // Allow all common methods
-        configuration.setAllowedMethods(Arrays.asList(
-                "GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"
-        ));
-
-        // Allow necessary headers
-        configuration.setAllowedHeaders(Arrays.asList(
-                "Authorization",
-                "Content-Type",
-                "X-Requested-With",
-                "Accept",
-                "Origin",
-                "Access-Control-Request-Method",
-                "Access-Control-Request-Headers"
-        ));
-
-        //  headers that might be needed by the frontend
-        configuration.setExposedHeaders(Arrays.asList(
-                "Access-Control-Allow-Origin",
-                "Access-Control-Allow-Credentials",
-                "Authorization"
-        ));
-
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5200"," http://145.93.93.110:5200/")); // Allow the frontend origin
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With"));
         configuration.setAllowCredentials(true);
-        configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
+
 
     @Bean
     public AuthenticationManager authenticationManager(

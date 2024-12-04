@@ -6,7 +6,7 @@ import com.reserveit.model.Company;
 import java.util.List;
 import java.util.UUID;
 
-public interface ICompanyDatabase {
+public interface CompanyDatabase {
     List<Company> findByCategoriesContaining(Category category);
     List<Company> findByMinimumRating(Float minRating);
     Company save(Company company);

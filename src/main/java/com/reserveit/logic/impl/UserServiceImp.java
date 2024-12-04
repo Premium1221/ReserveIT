@@ -1,6 +1,6 @@
 package com.reserveit.logic.impl;
 
-import com.reserveit.database.interfaces.IUserDatabase;
+import com.reserveit.database.interfaces.UserDatabase;
 import com.reserveit.dto.UserDto;
 import com.reserveit.model.User;
 import com.reserveit.logic.interfaces.UserService;
@@ -15,10 +15,10 @@ import java.util.stream.Collectors;
 
 @Service
 public class UserServiceImp implements UserService {
-    private final IUserDatabase userDb;
+    private final UserDatabase userDb;
     private final PasswordHasher passwordHasher;
 
-    UserServiceImp(IUserDatabase userDb, PasswordHasher passwordEncoder) {
+    public UserServiceImp(UserDatabase userDb, PasswordHasher passwordEncoder) {
         this.userDb = userDb;
         this.passwordHasher = passwordEncoder;
     }

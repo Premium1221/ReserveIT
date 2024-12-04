@@ -9,7 +9,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/reservations")
-@CrossOrigin(origins = "http://localhost:5200")
+@CrossOrigin(origins = {"http://localhost:5200"}, allowCredentials = "true")
 public class ReservationController {
     private final ReservationService reservationService;
 
