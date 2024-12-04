@@ -1,51 +1,40 @@
+# Define stages in order of execution
 stages:
   - build
   - test
-  - sonarqube
+  - sonar
   - docker
 
-variables:
-  MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
-
-default:
-  image: maven:3.8.6-jdk-11
-
-cache:
-  paths:
-    - .m2/repository
-
-before_script:
-  - export PATH=$PATH:./mvnw
-
+# Build the application
 build:
   stage: build
+  image: gradle:7.4-jdk17
   script:
-    - mvn clean package
+    - gradle build
   artifacts:
     paths:
-      - target/*.jar
+      - build/libs/*.jar
 
+# Run tests
 test:
   stage: test
+  image: gradle:7.4-jdk17
   script:
-    - mvn test
+    - gradle test
 
-sonarqube:
-  stage: sonarqube
-  image: sonarsource/sonar-scanner-cli:latest
+# Run SonarQube analysis
+sonar:
+  stage: sonar
+  image: gradle:7.4-jdk17
   script:
-    - sonar-scanner
-  dependencies:
-    - build
+    - gradle sonar
+  only:
+    - main
 
+# Build Docker image
 docker:
   stage: docker
-  image: docker:latest
-  services:
-    - docker:dind
   script:
-    - docker build -t myapp:latest .
-    - docker tag myapp:latest myregistry.com/myapp:latest
-    - docker push myregistry.com/myapp:latest
+    - docker build -t reserveit-app .
   only:
     - main
