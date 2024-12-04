@@ -52,7 +52,6 @@ dependencies {
 
     // Spring Boot Mail Starter
     implementation("org.springframework.boot:spring-boot-starter-mail")
-
 }
 
 tasks.withType<Test> {
@@ -83,12 +82,12 @@ tasks.jacocoTestReport {
     dependsOn(tasks.test)
 }
 
-sonar {
+sonarqube {
     properties {
-        property("sonar.projectKey", "ReservationApp")
+        property("sonar.projectKey", "reserveit")
         property("sonar.projectName", "Reservation Management System")
         property("sonar.host.url", System.getenv("SONAR_HOST_URL") ?: "http://localhost:9000")
-        property("sonar.token", System.getenv("SONAR_TOKEN") ?: "sqp_9e61629775f0333b12fdbd9abaddad6f12370cd0")
+        property("sonar.token", System.getenv("SONAR_TOKEN") ?: "sqp_da30dc9526fe9de53169e8bf941ff20a097ca823")
         property("sonar.java.binaries", "build/classes/java/main")
         property("sonar.sources", "src/main/java")
         property("sonar.tests", "src/test/java")

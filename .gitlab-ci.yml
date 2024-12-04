@@ -1,3 +1,4 @@
+# Define stages in order of execution
 stages:
   - build
   - test
@@ -20,28 +21,16 @@ test:
   image: gradle:7.4-jdk17
   script:
     - gradle test
-  artifacts:
-    reports:
-      junit: build/test-results/test/**/TEST-*.xml
 
 # Run SonarQube analysis
 sonar:
   stage: sonar
   image: gradle:7.4-jdk17
   script:
-    - gradle sonar
-  only:
-    - main
+    - gradle sonarqube --stacktrace --info
 
 # Build Docker image
 docker:
   stage: docker
-  image: docker:latest
-  services:
-    - docker:dind
   script:
     - docker build -t reserveit-app .
-    - docker tag reserveit-app:latest $CI_REGISTRY_IMAGE:latest
-    - docker push $CI_REGISTRY_IMAGE:latest
-  only:
-    - main

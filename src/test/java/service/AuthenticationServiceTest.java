@@ -191,5 +191,14 @@ class AuthenticationServiceTest {
         assertEquals(UserRole.CUSTOMER.toString(), response.getRole());
     }
 
+    @Test
+    void refreshToken_InvalidToken_ThrowsRuntimeException() {
+        // Arrange
+        String invalidRefreshToken = "invalidRefreshToken";
 
+        when(refreshTokenService.findByToken(invalidRefreshToken)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(RuntimeException.class, () -> authService.refreshToken(invalidRefreshToken));
+    }
 }
