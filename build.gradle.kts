@@ -78,7 +78,7 @@ tasks.jacocoTestReport {
     reports {
         xml.required.set(true) // Ensure XML is generated
         html.required.set(true)
-        csv.required.set(false) // Disable CSV to reduce clutter
+        csv.required.set(false) // Disable CSV to reduce clutte
     }
     dependsOn(tasks.test)
 }
