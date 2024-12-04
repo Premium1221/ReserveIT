@@ -15,6 +15,7 @@ repositories {
 
 java {
     sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
 dependencies {
@@ -45,7 +46,6 @@ dependencies {
     testImplementation("org.mockito:mockito-core")
 
     // JWT Dependencies
-    implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("io.jsonwebtoken:jjwt-api:0.11.5")
     runtimeOnly("io.jsonwebtoken:jjwt-impl:0.11.5")
     runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.11.5")
@@ -76,10 +76,15 @@ jacoco {
 
 tasks.jacocoTestReport {
     reports {
-        xml.required.set(true)
+        xml.required.set(true) // Ensure XML is generated
         html.required.set(true)
+        csv.required.set(false) // Disable CSV to reduce clutter
     }
     dependsOn(tasks.test)
+}
+
+tasks.named("sonarqube") {
+    dependsOn(tasks.jacocoTestReport)
 }
 
 sonarqube {
@@ -92,7 +97,7 @@ sonarqube {
         property("sonar.sources", "src/main/java")
         property("sonar.tests", "src/test/java")
         property("sonar.java.coveragePlugin", "jacoco")
-        property("sonar.coverage.jacoco.xmlReportPaths", "${layout.buildDirectory}/reports/jacoco/test/jacocoTestReport.xml")
+        property("sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/test/jacocoTestReport.xml")
         property("sonar.qualitygate.wait", true)
         property("sonar.exclusions", listOf(
             "**/MainApplication.java",
