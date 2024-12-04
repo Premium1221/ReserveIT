@@ -28,13 +28,9 @@ sonar:
   image: gradle:7.4-jdk17
   script:
     - gradle sonar
-  only:
-    - main
 
 # Build Docker image
 docker:
   stage: docker
   script:
     - docker build -t reserveit-app .
-  only:
-    - main
