@@ -27,8 +27,8 @@ sonar:
   stage: sonar
   image: gradle:7.4-jdk17
   script:
-    - gradle sonarqube -Dsonar.host.url="http://localhost:9000" -Dsonar.login=$SONAR_TOKEN
-
+    - gradle sonarqube -Dsonar.host.url="http://localhost:9000" -Dsonar.login="sqp_da30dc9526fe9de53169e8bf941ff20a097ca823"
+  
 # Build Docker image
 docker:
   stage: docker
