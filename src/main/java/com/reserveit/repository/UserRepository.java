@@ -16,5 +16,5 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     @Query("SELECT u FROM User u WHERE TYPE(u) = Staff AND u.id = :id")
     Optional<Staff> findStaffById(@Param("id") UUID id);
-
+//
 }
