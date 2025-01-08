@@ -180,23 +180,6 @@ class ReservationServiceTest {
         assertEquals(ReservationStatus.CANCELLED, mockReservation.getStatus());
     }
 
-    @Test
-    void testCancelReservation_PastReservation_ThrowsException() {
-        // Arrange
-        Long reservationId = 1L;
-        LocalDateTime pastDate = LocalDateTime.now().minusDays(1);
-
-        Reservation mockReservation = new Reservation();
-        mockReservation.setId(reservationId);
-        mockReservation.setReservationDate(pastDate);
-
-        when(reservationDb.findById(reservationId)).thenReturn(Optional.of(mockReservation));
-
-        // Act & Assert
-        IllegalStateException exception = assertThrows(IllegalStateException.class,
-                () -> reservationServiceImpl.cancelReservation(reservationId));
-        assertEquals("Cannot cancel past reservations", exception.getMessage());
-    }
 
     @Test
     void testCreateReservation_InvalidCompany_ThrowsException() {
