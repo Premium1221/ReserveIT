@@ -42,10 +42,9 @@ public class    CompanyServiceImpl implements CompanyService {
 
     @Override
     public CompanyDto getCompanyById(UUID id) {
-        Optional<Company> optionalCompany = Optional.ofNullable(companyDb.findById(id));
-        return optionalCompany
+        return companyDb.findById(id)
                 .map(this::convertToDto)
-                .orElseThrow(() -> new IllegalArgumentException("Company not found"));
+                .orElseThrow(() -> new IllegalArgumentException("Company not found with id: " + id));
     }
 
     @Override
@@ -55,8 +54,7 @@ public class    CompanyServiceImpl implements CompanyService {
 
     @Override
     public void updateCompany(UUID id, CompanyDto companyDto) {
-        Optional<Company> optionalCompany = Optional.ofNullable(companyDb.findById(id));
-        Company existingCompany = optionalCompany
+        Company existingCompany = companyDb.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Company not found with id: " + id));
 
         boolean isUpdated = false;
@@ -94,6 +92,13 @@ public class    CompanyServiceImpl implements CompanyService {
             companyDb.save(existingCompany);
         }
     }
+    @Override
+    public String getCompanyNameById(UUID id) {
+        return companyDb.findById(id)
+                .map(Company::getName)
+                .orElseThrow(() -> new IllegalArgumentException("Company not found with id: " + id));
+    }
+
 
     private Company convertToEntity(CompanyDto companyDto) {
         Company company = new Company();

@@ -1,6 +1,7 @@
 package com.reserveit.database.impl;
 
 import com.reserveit.database.interfaces.UserDatabase;
+import com.reserveit.model.Staff;
 import com.reserveit.model.User;
 import com.reserveit.repository.UserRepository;
 import org.springframework.stereotype.Component;
@@ -24,6 +25,9 @@ public class UserDatabaseImpl implements UserDatabase {
 
     @Override
     public User save(User user) {
+        if (user instanceof Staff staff) {
+            System.out.println("Saving a Staff entity");
+        }
         return userRepository.save(user);
     }
 
@@ -39,15 +43,12 @@ public class UserDatabaseImpl implements UserDatabase {
 
     @Override
     public void deleteById(UUID id) {
+        System.out.println("Deleting user with ID: " + id);
         userRepository.deleteById(id);
     }
 
     @Override
-    public  boolean existsByEmail(String email){
+    public boolean existsByEmail(String email) {
         return userRepository.existsByEmail(email);
-
     }
-
-
-
 }

@@ -1,6 +1,7 @@
 package service;
 
 import com.reserveit.logic.impl.UserServiceImp;
+import com.reserveit.logic.interfaces.RefreshTokenService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -32,10 +33,12 @@ class UserServiceTest {
 
     private UserServiceImp userService;
 
+    private RefreshTokenService refreshTokenService;
+
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        userService = new UserServiceImp(userDb, passwordHasher);
+        userService = new UserServiceImp(userDb, passwordHasher, refreshTokenService);
     }
 
     @Test

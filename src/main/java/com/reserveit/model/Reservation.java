@@ -1,17 +1,19 @@
 package com.reserveit.model;
 
+import com.reserveit.enums.TableStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
+import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
+import com.reserveit.enums.ReservationStatus;
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Entity
 @Table(name = "reservations")
-@EntityListeners(AuditingEntityListener.class)
+@Getter
+@Setter
 public class Reservation {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -35,6 +37,14 @@ public class Reservation {
     @Column(name = "reservation_date", nullable = false)
     private LocalDateTime reservationDate;
 
+    @Column(name = "end_time", nullable = false)
+    private LocalDateTime endTime;
+
+    @Min(value = 60, message = "Duration must be at least 60 minutes")
+    @Max(value = 240, message = "Duration cannot exceed 240 minutes")
+    @Column(name = "duration", nullable = false)
+    private Integer duration = 120; // Default 2 hours
+
     @Min(value = 1, message = "Number of people must be at least 1")
     @Column(name = "number_of_people", nullable = false)
     private int numberOfPeople;
@@ -53,7 +63,7 @@ public class Reservation {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private ReservationStatus status = ReservationStatus.PENDING;
+    private ReservationStatus status = ReservationStatus.CONFIRMED;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -63,154 +73,47 @@ public class Reservation {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    @Column(name = "cancelled_at")
-    private LocalDateTime cancelledAt;
+    @Column(name = "check_in_time")
+    private LocalDateTime checkInTime;
 
-    @Column(name = "confirmation_code", unique = true)
-    private String confirmationCode;
-
-    @PrePersist
-    protected void onCreate() {
-        if (confirmationCode == null) {
-            confirmationCode = generateConfirmationCode();
-        }
-    }
-
-    public enum ReservationStatus {
-        PENDING("Pending"),
-        CONFIRMED("Confirmed"),
-        CANCELLED("Cancelled"),
-        COMPLETED("Completed"),
-        NO_SHOW("No Show");
-
-        private final String displayName;
-
-        ReservationStatus(String displayName) {
-            this.displayName = displayName;
-        }
-
-        public String getDisplayName() {
-            return displayName;
-        }
-    }
+    @Column(name = "check_out_time")
+    private LocalDateTime checkOutTime;
 
     // Helper methods
-    private String generateConfirmationCode() {
-        return UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+    public boolean canCheckIn() {
+        LocalDateTime now = LocalDateTime.now();
+        return status == ReservationStatus.CONFIRMED &&
+                Math.abs(now.getMinute() - reservationDate.getMinute()) <= 15;
     }
 
-    public boolean canBeCancelled() {
-        return status == ReservationStatus.PENDING || status == ReservationStatus.CONFIRMED;
+    public boolean canExtendTime() {
+        return status == ReservationStatus.ARRIVED;
     }
 
-    public void cancel() {
-        if (canBeCancelled()) {
-            this.status = ReservationStatus.CANCELLED;
-            this.cancelledAt = LocalDateTime.now();
-        } else {
-            throw new IllegalStateException("Reservation cannot be cancelled in current status: " + status);
+    public void extend(int additionalMinutes) {
+        this.duration += additionalMinutes;
+        this.endTime = this.endTime.plusMinutes(additionalMinutes);
+    }
+
+    public void checkIn() {
+        if (!canCheckIn()) {
+            throw new IllegalStateException("Cannot check in at this time");
+        }
+        this.status = ReservationStatus.ARRIVED;
+        this.checkInTime = LocalDateTime.now();
+        if (this.diningTable != null) {
+            this.diningTable.setStatus(TableStatus.OCCUPIED);
         }
     }
 
-    public boolean isUpcoming() {
-        return reservationDate.isAfter(LocalDateTime.now()) &&
-                (status == ReservationStatus.PENDING || status == ReservationStatus.CONFIRMED);
-    }
-
-    // Getters and Setters
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getCustomerName() {
-        return customerName;
-    }
-
-    public void setCustomerName(String customerName) {
-        this.customerName = customerName;
-    }
-
-    public String getCustomerEmail() {
-        return customerEmail;
-    }
-
-    public void setCustomerEmail(String customerEmail) {
-        this.customerEmail = customerEmail;
-    }
-
-    public String getCustomerPhone() {
-        return customerPhone;
-    }
-
-    public void setCustomerPhone(String customerPhone) {
-        this.customerPhone = customerPhone;
-    }
-
-    public LocalDateTime getReservationDate() {
-        return reservationDate;
-    }
-
-    public void setReservationDate(LocalDateTime reservationDate) {
-        this.reservationDate = reservationDate;
-    }
-
-    public int getNumberOfPeople() {
-        return numberOfPeople;
-    }
-
-    public void setNumberOfPeople(int numberOfPeople) {
-        this.numberOfPeople = numberOfPeople;
-    }
-
-    public Company getCompany() {
-        return company;
-    }
-
-    public void setCompany(Company company) {
-        this.company = company;
-    }
-
-    public DiningTable getDiningTable() {
-        return diningTable;
-    }
-
-    public void setDiningTable(DiningTable diningTable) {
-        this.diningTable = diningTable;
-    }
-
-    public String getSpecialRequests() {
-        return specialRequests;
-    }
-
-    public void setSpecialRequests(String specialRequests) {
-        this.specialRequests = specialRequests;
-    }
-
-    public ReservationStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(ReservationStatus status) {
-        this.status = status;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public LocalDateTime getCancelledAt() {
-        return cancelledAt;
-    }
-
-    public String getConfirmationCode() {
-        return confirmationCode;
+    public void checkOut() {
+        if (this.status != ReservationStatus.ARRIVED) {
+            throw new IllegalStateException("Can only check out arrived reservations");
+        }
+        this.status = ReservationStatus.COMPLETED;
+        this.checkOutTime = LocalDateTime.now();
+        if (this.diningTable != null) {
+            this.diningTable.setStatus(TableStatus.AVAILABLE);
+        }
     }
 }

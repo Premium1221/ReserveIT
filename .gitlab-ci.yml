@@ -29,7 +29,7 @@ sonar:
   script:
     - gradle sonarqube --stacktrace --info
 
-  
+
 # Build Docker image
 docker:
   stage: docker

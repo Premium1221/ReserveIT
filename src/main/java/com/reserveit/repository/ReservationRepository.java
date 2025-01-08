@@ -1,5 +1,6 @@
 package com.reserveit.repository;
 
+import com.reserveit.enums.ReservationStatus;
 import com.reserveit.model.Company;
 import com.reserveit.model.Reservation;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -17,11 +18,8 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     List<Reservation> findByCompany(Company company);
 
     // Find upcoming reservations for a company that aren't cancelled
-    List<Reservation> findByCompanyAndReservationDateAfterAndStatusNot(
-            Company company,
-            LocalDateTime date,
-            Reservation.ReservationStatus status
-    );
+    List<Reservation> findByCompanyAndReservationDateAfterAndStatusNot(Company company, LocalDateTime date, ReservationStatus status);
+
 
     // Find reservations between two dates for a company
     List<Reservation> findByCompanyAndReservationDateBetween(
@@ -48,4 +46,8 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
             @Param("startTime") LocalDateTime startTime,
             @Param("endTime") LocalDateTime endTime
     );
+    List<Reservation> findByStatus(ReservationStatus status);
+    List<Reservation> findByReservationDateBetween(LocalDateTime startTime, LocalDateTime endTime);
+    List<Reservation> findByCompanyAndStatus(Company company, ReservationStatus status);
+
 }

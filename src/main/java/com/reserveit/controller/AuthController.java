@@ -8,10 +8,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Arrays;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -32,22 +29,36 @@ public class AuthController {
 
     @PostMapping("/refresh")
     public ResponseEntity<AuthenticationResponse> refreshToken(HttpServletRequest request) {
+        String refreshToken = extractRefreshTokenFromCookie(request);
+
+        if (refreshToken == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        try {
+            AuthenticationResponse response = authenticationService.refreshToken(refreshToken);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(401).build();
+        }
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(HttpServletRequest request) {
+        String refreshToken = extractRefreshTokenFromCookie(request);
+        authenticationService.logout(refreshToken);
+        return ResponseEntity.ok().build();
+    }
+
+    private String extractRefreshTokenFromCookie(HttpServletRequest request) {
         Cookie[] cookies = request.getCookies();
         if (cookies != null) {
             for (Cookie cookie : cookies) {
                 if (cookie.getName().equals("refreshToken")) {
-                    return ResponseEntity.ok(authenticationService.refreshToken(cookie.getValue()));
+                    return cookie.getValue();
                 }
             }
         }
-        throw new RuntimeException("Refresh token not found");
+        return null;
     }
-
-    @PostMapping("/logout")
-    public ResponseEntity<Void> logout() {
-        authenticationService.logout();
-        return ResponseEntity.ok().build();
-    }
-
-
 }

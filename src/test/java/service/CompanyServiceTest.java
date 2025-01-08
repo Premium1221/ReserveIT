@@ -12,6 +12,7 @@ import com.reserveit.logic.impl.CompanyServiceImpl;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -71,18 +72,15 @@ class CompanyServiceTest {
 
     @Test
     void getCompanyById_ValidId_ReturnsCompany() {
-        // Arrange
         UUID companyId = UUID.randomUUID();
         Company mockCompany = new Company();
         mockCompany.setId(companyId);
         mockCompany.setName("Test Company");
 
-        when(companyDb.findById(companyId)).thenReturn(mockCompany);
+        when(companyDb.findById(companyId)).thenReturn(Optional.of(mockCompany));
 
-        // Act
         CompanyDto result = companyService.getCompanyById(companyId);
 
-        // Assert
         assertNotNull(result);
         assertEquals(mockCompany.getName(), result.getName());
     }
@@ -91,11 +89,13 @@ class CompanyServiceTest {
     void getCompanyById_InvalidId_ThrowsException() {
         // Arrange
         UUID nonExistentId = UUID.randomUUID();
-        when(companyDb.findById(nonExistentId)).thenReturn(null);
+        when(companyDb.findById(nonExistentId)).thenReturn(Optional.empty()); // Return Optional.empty for non-existent ID
 
         // Act & Assert
-        assertThrows(IllegalArgumentException.class, () -> {
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             companyService.getCompanyById(nonExistentId);
         });
+        assertEquals("Company not found with id: " + nonExistentId, exception.getMessage());
     }
+
 }

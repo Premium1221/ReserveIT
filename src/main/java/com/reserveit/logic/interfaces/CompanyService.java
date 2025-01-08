@@ -11,4 +11,7 @@ public interface CompanyService {
     List<CompanyDto> getAllCompanies();
     void deleteCompany(UUID id);
     void updateCompany(UUID id, CompanyDto companyDto);
+    String getCompanyNameById(UUID id);
+
+
 }

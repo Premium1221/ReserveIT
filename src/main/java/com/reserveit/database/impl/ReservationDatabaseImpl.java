@@ -5,6 +5,7 @@ import com.reserveit.model.Company;
 import com.reserveit.model.Reservation;
 import com.reserveit.repository.ReservationRepository;
 import org.springframework.stereotype.Component;
+import com.reserveit.enums.ReservationStatus;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -24,7 +25,7 @@ public class ReservationDatabaseImpl implements ReservationDatabase {
     }
 
     @Override
-    public List<Reservation> findByCompanyAndReservationDateAfterAndStatusNot(Company company, LocalDateTime date, Reservation.ReservationStatus status) {
+    public List<Reservation> findByCompanyAndReservationDateAfterAndStatusNot(Company company, LocalDateTime date, ReservationStatus status) {
         return reservationRepository.findByCompanyAndReservationDateAfterAndStatusNot(company, date, status);
     }
 
@@ -62,4 +63,18 @@ public class ReservationDatabaseImpl implements ReservationDatabase {
     public void deleteById(Long id) {
         reservationRepository.deleteById(id);
     }
+
+    @Override
+    public List<Reservation> findByStatus(ReservationStatus status) {
+        return reservationRepository.findByStatus(status);
+    }
+    @Override
+    public List<Reservation> findByReservationDateBetween(LocalDateTime startTime, LocalDateTime endTime) {
+        return reservationRepository.findByReservationDateBetween(startTime, endTime);
+    }
+    @Override
+    public List<Reservation> findByCompanyAndStatus(Company company, ReservationStatus status) {
+        return reservationRepository.findByCompanyAndStatus(company, status);
+    }
+
 }

@@ -2,13 +2,18 @@ package com.reserveit.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Table(name = "table_configurations")
+@Getter
+@Setter
+@NoArgsConstructor
 public class TableConfiguration {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -22,65 +27,45 @@ public class TableConfiguration {
     @JoinColumn(name = "company_id", nullable = false)
     private Company company;
 
-    @OneToMany(mappedBy = "configuration", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "configuration", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<DiningTable> tables = new ArrayList<>();
 
     @Column(nullable = false)
     private boolean active = false;
 
-    // Constructors
-    public TableConfiguration() {
-    }
-
-    // Getters and Setters
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public Company getCompany() {
-        return company;
-    }
-
-    public void setCompany(Company company) {
-        this.company = company;
-    }
-
-    public List<DiningTable> getTables() {
-        return tables;
-    }
-
-    public void setTables(List<DiningTable> tables) {
-        this.tables = tables;
-    }
-
-    public boolean isActive() {
-        return active;
-    }
-
-    public void setActive(boolean active) {
-        this.active = active;
-    }
-
-    // Helper methods
+    // Business logic methods
     public void addTable(DiningTable table) {
         tables.add(table);
         table.setConfiguration(this);
     }
 
     public void removeTable(DiningTable table) {
-        tables.remove(table);
-        table.setConfiguration(null);
+        if (tables.remove(table)) {
+            table.setConfiguration(null);
+        }
+    }
+
+    public void clearTables() {
+        tables.forEach(table -> table.setConfiguration(null));
+        tables.clear();
+    }
+
+    // Configuration management
+    public void activate() {
+        this.active = true;
+    }
+
+    public void deactivate() {
+        this.active = false;
+    }
+
+    // Helper method to check if configuration is empty
+    public boolean isEmpty() {
+        return tables.isEmpty();
+    }
+
+    @PreRemove
+    private void preRemove() {
+        clearTables();
     }
 }

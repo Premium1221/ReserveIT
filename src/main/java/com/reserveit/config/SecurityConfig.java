@@ -26,30 +26,13 @@ import java.util.Arrays;
 public class SecurityConfig {
     private final JwtAuthFilter jwtAuthFilter;
 
-    //  public endpoints
     private static final String[] PUBLIC_ENDPOINTS = {
-            "/api/auth/login",
-            "/api/auth/register",
-            "/api/auth/refresh",
-            "/api/users/register",
-            "/api/users/login",
+            "/api/auth/**",
+            "/api/public/**",
+            "/actuator/health",
             "/v3/api-docs/**",
             "/swagger-ui/**",
-            "/actuator/health"
-    };
-
-    private static final String[] ADMIN_ENDPOINTS = {
-            "/api/admin/**",
-            "/api/users/**",
-            "/api/auth/register/admin"
-    };
-
-    private static final String[] MANAGEMENT_ENDPOINTS = {
-            "/api/management/**"
-    };
-
-    private static final String[] STAFF_ENDPOINTS = {
-            "/api/staff/**"
+            "/ws/**"
     };
 
     public SecurityConfig(JwtAuthFilter jwtAuthFilter) {
@@ -58,38 +41,25 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        System.out.println("Configuring security filter chain");
+
         http
-                .securityMatcher("/**")
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
-                .headers(headers -> headers
-                        .frameOptions().sameOrigin()
-                        .xssProtection().disable()
-                        .contentSecurityPolicy("default-src 'self'")
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authorizeHttpRequests(auth -> auth
-                        // Public endpoints
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/companies/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
-
-                        // Admin endpoints
-                        .requestMatchers(ADMIN_ENDPOINTS).hasRole("ADMIN")
-
-                        // Management endpoints
-                        .requestMatchers(MANAGEMENT_ENDPOINTS).hasAnyRole("MANAGER", "ADMIN")
-
-                        // Staff endpoints
-                        .requestMatchers(STAFF_ENDPOINTS).hasAnyRole("STAFF", "MANAGER", "ADMIN")
-
-                        // Customer endpoints
-                        .requestMatchers("/api/reservations/**").hasAnyRole("CUSTOMER", "STAFF", "MANAGER", "ADMIN")
-
-                        // All other requests need authentication
+                        .requestMatchers("/api/tables/restaurant/**").hasAnyRole("CUSTOMER", "MANAGER", "ADMIN")
+                        .requestMatchers("/api/tables/company/**").hasRole("MANAGER")
+                        .requestMatchers("/api/tables/**").hasAnyRole("MANAGER", "ADMIN")
+                        .requestMatchers("/api/companies/{id}/dashboard").hasRole("MANAGER")
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/management/**").hasAnyRole("MANAGER", "ADMIN")
+                        .requestMatchers("/api/staff/**").hasAnyRole("STAFF", "MANAGER", "ADMIN")
                         .anyRequest().authenticated()
-                )
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
@@ -99,16 +69,24 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5200"," http://145.93.93.110:5200/")); // Allow the frontend origin
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With"));
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5200"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList(
+                "Authorization",
+                "Content-Type",
+                "Accept",
+                "X-Requested-With",
+                "Access-Control-Allow-Origin",
+                "Access-Control-Allow-Methods"
+        ));
+        configuration.setExposedHeaders(Arrays.asList("Set-Cookie"));
         configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
-
 
     @Bean
     public AuthenticationManager authenticationManager(

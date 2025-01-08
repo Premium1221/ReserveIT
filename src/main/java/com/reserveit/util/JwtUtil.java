@@ -1,8 +1,11 @@
 package com.reserveit.util;
 
+import com.reserveit.logic.interfaces.StaffService;
+import com.reserveit.model.Staff;
 import com.reserveit.model.User;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -17,6 +20,9 @@ public class JwtUtil {
     @Value("${jwt.access.expiration}")
     private Long accessTokenExpiration;
 
+    @Autowired
+    private StaffService staffService;
+
     private Key getSignKey() {
         byte[] keyBytes = Base64.getDecoder().decode(secret);
         return Keys.hmacShaKeyFor(keyBytes);
@@ -24,9 +30,15 @@ public class JwtUtil {
 
     public String generateAccessToken(User user) {
         Map<String, Object> claims = new HashMap<>();
-        claims.put("role", user.getUserRole().name());
+        claims.put("role", "ROLE_" + user.getUserRole().name());
         claims.put("firstName", user.getFirstName());
         claims.put("lastName", user.getLastName());
+
+        if (user instanceof Staff staff) {
+            UUID companyId = staff.getCompany().getId();
+            System.out.println("Adding company ID to token: " + companyId);
+            claims.put("companyId", companyId.toString());
+        }
 
         return Jwts.builder()
                 .setClaims(claims)
@@ -41,6 +53,11 @@ public class JwtUtil {
         return extractAllClaims(token).getSubject();
     }
 
+    public String getCompanyIdFromToken(String token) {
+        Claims claims = extractAllClaims(token);
+        return claims.get("companyId", String.class);
+    }
+
     private Claims extractAllClaims(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(getSignKey())
@@ -52,9 +69,12 @@ public class JwtUtil {
     public boolean validateAccessToken(String token, User userDetails) {
         try {
             Claims claims = extractAllClaims(token);
-            return claims.getSubject().equals(userDetails.getEmail()) &&
+            boolean valid = claims.getSubject().equals(userDetails.getEmail()) &&
                     !isTokenExpired(claims.getExpiration());
-        } catch (JwtException | IllegalArgumentException e) {
+            System.out.println("Token validation result for user " + userDetails.getEmail() + ": " + valid);
+            return valid;
+        } catch (Exception e) {
+            System.err.println("Token validation failed: " + e.getMessage());
             return false;
         }
     }

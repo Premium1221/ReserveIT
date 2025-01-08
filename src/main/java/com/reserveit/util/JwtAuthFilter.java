@@ -2,75 +2,78 @@ package com.reserveit.util;
 
 import com.reserveit.logic.interfaces.UserService;
 import com.reserveit.model.User;
-import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 @Component
-@RequiredArgsConstructor
 public class JwtAuthFilter extends OncePerRequestFilter {
+
     private final JwtUtil jwtUtil;
     private final UserService userService;
 
-    @Override
-    protected void doFilterInternal(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            FilterChain filterChain) throws ServletException, IOException {
+    public JwtAuthFilter(JwtUtil jwtUtil, UserService userService) {
+        this.jwtUtil = jwtUtil;
+        this.userService = userService;
+    }
 
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
         final String authHeader = request.getHeader("Authorization");
 
-        // Skip filtering for specific endpoints
-        if (shouldNotFilter(request) || authHeader == null || !authHeader.startsWith("Bearer ")) {
+        // Debug print instead of logger
+        System.out.println("Auth Header: " + authHeader);
+
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
         try {
-            final String accessToken = authHeader.substring(7);
-            final String userEmail = jwtUtil.getEmailFromToken(accessToken);
+            final String jwt = authHeader.substring(7);
+            final String userEmail = jwtUtil.getEmailFromToken(jwt);
+            final String companyId = jwtUtil.getCompanyIdFromToken(jwt);
+
+            // Debug prints
+            System.out.println("User Email: " + userEmail);
+            System.out.println("Company ID: " + companyId);
 
             if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 User user = userService.getUserEntityByEmail(userEmail);
 
-                if (jwtUtil.validateAccessToken(accessToken, user)) {
+                if (jwtUtil.validateAccessToken(jwt, user)) {
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                             user,
                             null,
-                            user.getAuthorities() // Only ROLE-based authorities
+                            Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getUserRole().name()))
                     );
-                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
-                    logger.info("Injected Authorities: " + authToken.getAuthorities());
 
-                } else {
-                    logger.warn("Invalid or expired access token for user: " + userEmail);
-                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Access token is invalid or expired");
-                    return;
+                    if (companyId != null) {
+                        Map<String, String> details = new HashMap<>();
+                        details.put("companyId", companyId);
+                        authToken.setDetails(details);
+                    }
+
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                    System.out.println("Authentication set successfully for user: " + userEmail);
                 }
             }
-        } catch (JwtException e) {
-            logger.error("JWT token validation failed", e);
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token validation failed: " + e.getMessage());
-            return;
-        } catch (IllegalArgumentException e) {
-            logger.error("Invalid token format", e);
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid token format");
-            return;
         } catch (Exception e) {
-            logger.error("Authentication error", e);
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Authentication error occurred");
-            return;
+            // Simple error printing instead of logger
+            System.err.println("Authentication error: " + e.getMessage());
+            e.printStackTrace();
         }
 
         filterChain.doFilter(request, response);
@@ -83,7 +86,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 "/api/auth/register",
                 "/api/auth/refresh",
                 "/api/public",
-                "/api/companies",
                 "/actuator/health"
         };
 

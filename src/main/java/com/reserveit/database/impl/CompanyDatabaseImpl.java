@@ -7,6 +7,7 @@ import com.reserveit.repository.CompanyRepository;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Component
@@ -33,8 +34,8 @@ public class CompanyDatabaseImpl implements CompanyDatabase {
     }
 
     @Override
-    public Company findById(UUID id) {
-        return companyRepository.findById(id).orElse(null);
+    public Optional<Company> findById(UUID id) {
+        return companyRepository.findById(id);
     }
 
     @Override

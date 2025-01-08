@@ -93,16 +93,12 @@ public class CompanyDatabaseImplTest {
 
     @Test
     void findById_ShouldReturnCompanyWhenExists() {
-        // Arrange
         UUID id = UUID.randomUUID();
         Company company = new Company();
         company.setId(id);
         when(companyRepository.findById(id)).thenReturn(Optional.of(company));
 
-        // Act
-        Company foundCompany = companyDatabase.findById(id);
-
-        // Assert
+        Company foundCompany = companyDatabase.findById(id).orElseThrow(() -> new IllegalArgumentException("Company not found"));
         assertNotNull(foundCompany);
         assertEquals(id, foundCompany.getId());
         verify(companyRepository).findById(id);
@@ -110,15 +106,11 @@ public class CompanyDatabaseImplTest {
 
     @Test
     void findById_ShouldReturnNullWhenCompanyNotFound() {
-        // Arrange
         UUID id = UUID.randomUUID();
         when(companyRepository.findById(id)).thenReturn(Optional.empty());
 
-        // Act
-        Company foundCompany = companyDatabase.findById(id);
-
-        // Assert
-        assertNull(foundCompany);
+        Optional<Company> foundCompany = companyDatabase.findById(id);
+        assertTrue(foundCompany.isEmpty());
         verify(companyRepository).findById(id);
     }
 

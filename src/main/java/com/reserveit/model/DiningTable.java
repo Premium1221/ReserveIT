@@ -1,8 +1,14 @@
 package com.reserveit.model;
 
+import com.reserveit.enums.TableShape;
+import com.reserveit.enums.TableStatus;
+import com.reserveit.enums.ReservationStatus;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -12,6 +18,9 @@ import java.util.List;
 
 @Entity
 @Table(name = "dining_tables")
+@Getter
+@Setter
+@NoArgsConstructor
 public class DiningTable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -22,16 +31,14 @@ public class DiningTable {
     @Column(nullable = false)
     private int capacity;
 
-    @Column(nullable = false)
-    private boolean available = true;
+    @Column(name = "x_position", nullable = false)
+    private int xPosition = 0;
 
-    @Min(value = 0, message = "X position cannot be negative")
-    @Column(name = "x_position")
-    private int xPosition;
+    @Column(name = "y_position", nullable = false)
+    private int yPosition = 0;
 
-    @Min(value = 0, message = "Y position cannot be negative")
-    @Column(name = "y_position")
-    private int yPosition;
+    @Column(name = "rotation")
+    private int rotation = 0;
 
     @NotNull(message = "Table number is required")
     @Column(name = "table_number", nullable = false)
@@ -41,16 +48,16 @@ public class DiningTable {
     @JoinColumn(name = "company_id", nullable = false)
     private Company company;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "configuration_id")
-    private TableConfiguration configuration;
-
     @OneToMany(mappedBy = "diningTable", cascade = CascadeType.ALL)
     private List<Reservation> reservations = new ArrayList<>();
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private TableStatus status = TableStatus.AVAILABLE;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private TableShape shape = TableShape.SQUARE;
 
     @Column(name = "floor_level")
     private int floorLevel = 1;
@@ -66,25 +73,35 @@ public class DiningTable {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    public enum TableStatus {
-        AVAILABLE,
-        OCCUPIED,
-        RESERVED,
-        OUT_OF_SERVICE,
-        CLEANING
-    }
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "configuration_id")
+    private TableConfiguration configuration;
 
-    // Constructors
-    public DiningTable() {
-    }
-
+    // Constructor with required fields
     public DiningTable(int capacity, String tableNumber, Company company) {
         this.capacity = capacity;
         this.tableNumber = tableNumber;
         this.company = company;
     }
 
-    // Helper methods
+    @PrePersist
+    @PreUpdate
+    private void validatePosition() {
+        if (xPosition < 0 || yPosition < 0) {
+            throw new IllegalArgumentException("Table position cannot be negative");
+        }
+    }
+
+    // Position update methods
+    public void updatePosition(int newX, int newY) {
+        if (newX < 0 || newY < 0) {
+            throw new IllegalArgumentException("Position values cannot be negative");
+        }
+        this.xPosition = newX;
+        this.yPosition = newY;
+    }
+
+    // Business logic methods
     public void addReservation(Reservation reservation) {
         reservations.add(reservation);
         reservation.setDiningTable(this);
@@ -106,33 +123,8 @@ public class DiningTable {
                 reservations.stream()
                         .noneMatch(reservation ->
                                 reservation.getReservationDate().equals(dateTime) &&
-                                        reservation.getStatus() != Reservation.ReservationStatus.CANCELLED
+                                        reservation.getStatus() != ReservationStatus.CANCELLED
                         );
-    }
-
-
-    public TableConfiguration getConfiguration() {
-        return configuration;
-    }
-
-    public void setConfiguration(TableConfiguration configuration) {
-        this.configuration = configuration;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public int getCapacity() {
-        return capacity;
-    }
-
-    public void setCapacity(int capacity) {
-        this.capacity = capacity;
     }
 
     public boolean isAvailable() {
@@ -143,75 +135,13 @@ public class DiningTable {
         this.status = available ? TableStatus.AVAILABLE : TableStatus.OCCUPIED;
     }
 
-    public int getXPosition() {
-        return xPosition;
-    }
-
-    public void setXPosition(int xPosition) {
-        this.xPosition = xPosition;
-    }
-
-    public int getYPosition() {
-        return yPosition;
-    }
-
-    public void setYPosition(int yPosition) {
-        this.yPosition = yPosition;
-    }
-
-    public String getTableNumber() {
-        return tableNumber;
-    }
-
-    public void setTableNumber(String tableNumber) {
-        this.tableNumber = tableNumber;
-    }
-
-    public Company getCompany() {
-        return company;
-    }
-
-    public void setCompany(Company company) {
-        this.company = company;
-    }
-
-    public List<Reservation> getReservations() {
-        return reservations;
-    }
-
-    public void setReservations(List<Reservation> reservations) {
-        this.reservations = reservations;
-    }
-
-    public TableStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(TableStatus status) {
-        this.status = status;
-    }
-
-    public int getFloorLevel() {
-        return floorLevel;
-    }
-
-    public void setFloorLevel(int floorLevel) {
-        this.floorLevel = floorLevel;
-    }
-
-    public boolean isOutdoor() {
-        return outdoor;
-    }
-
-    public void setOutdoor(boolean outdoor) {
-        this.outdoor = outdoor;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
+    public void setConfiguration(TableConfiguration configuration) {
+        if (this.configuration != null && this.configuration.getTables().contains(this)) {
+            this.configuration.getTables().remove(this);
+        }
+        this.configuration = configuration;
+        if (configuration != null && !configuration.getTables().contains(this)) {
+            configuration.getTables().add(this);
+        }
     }
 }

@@ -2,9 +2,12 @@ package com.reserveit.logic.impl;
 
 import com.reserveit.database.interfaces.UserDatabase;
 import com.reserveit.dto.UserDto;
+import com.reserveit.logic.interfaces.RefreshTokenService;
+import com.reserveit.model.Staff;
 import com.reserveit.model.User;
 import com.reserveit.logic.interfaces.UserService;
 import com.reserveit.util.PasswordHasher;
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 
@@ -17,10 +20,12 @@ import java.util.stream.Collectors;
 public class UserServiceImp implements UserService {
     private final UserDatabase userDb;
     private final PasswordHasher passwordHasher;
+    private final RefreshTokenService refreshTokenService;
 
-    public UserServiceImp(UserDatabase userDb, PasswordHasher passwordEncoder) {
+    public UserServiceImp(UserDatabase userDb, PasswordHasher passwordEncoder, RefreshTokenService refreshTokenService) {
         this.userDb = userDb;
         this.passwordHasher = passwordEncoder;
+        this.refreshTokenService = refreshTokenService;
     }
     @Override
     public UserDto createUser(UserDto userDto,String rawPassword) {
@@ -46,9 +51,23 @@ public class UserServiceImp implements UserService {
 
     }
 
+    @Transactional
     @Override
     public void deleteUserById(UUID id) {
-userDb.deleteById(id);
+        User user = userDb.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        // Delete all refresh tokens
+        refreshTokenService.deleteAllUserTokens(user);
+
+        // Handle Staff-specific cleanup
+        if (user instanceof Staff staffMember && staffMember.getCompany() != null) {
+            staffMember.setCompany(null); // Disassociate company only if it exists
+            userDb.save(staffMember);
+        }
+
+        // Delete the user
+        userDb.deleteById(id);
     }
 
     @Override

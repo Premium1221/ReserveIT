@@ -10,9 +10,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.UUID;
+import java.util.*;
 
 @Entity
 @Table(name = "users")
@@ -20,6 +18,7 @@ import java.util.UUID;
 public class User implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
+    @Column(columnDefinition = "BINARY(16)")
     private UUID id;
 
     @NotBlank(message = "First name is required")
@@ -47,6 +46,10 @@ public class User implements UserDetails {
     @Column(name = "role", nullable = false)
     private UserRole userRole = UserRole.CUSTOMER;
 
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<RefreshToken> refreshTokens = new HashSet<>();
+
     // Constructors
     public User() {}
 
@@ -62,7 +65,7 @@ public class User implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + userRole.name()));
+        return Collections.singletonList(new SimpleGrantedAuthority(userRole.name()));
     }
 
     @Override
@@ -175,6 +178,17 @@ public class User implements UserDetails {
     }
 
     public void setUserRole(UserRole userRole) {
+        if (userRole == null) {
+            throw new IllegalArgumentException("User role cannot be null");
+        }
         this.userRole = userRole;
     }
+    public Set<RefreshToken> getRefreshTokens() {
+        return refreshTokens;
+    }
+
+    public void setRefreshTokens(Set<RefreshToken> refreshTokens) {
+        this.refreshTokens = refreshTokens;
+    }
+
 }

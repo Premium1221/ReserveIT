@@ -10,6 +10,8 @@ import com.reserveit.model.DiningTable;
 import com.reserveit.logic.interfaces.ReservationService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.reserveit.enums.ReservationStatus;
+import com.reserveit.enums.TableStatus;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -31,10 +33,10 @@ public class ReservationServiceImpl implements ReservationService {
         this.companyDb = companyDb;
         this.tableDb = tableDb;
     }
+
     @Override
     public List<ReservationDto> getReservationsByCompany(UUID companyId) {
-        Optional<Company> optionalCompany = Optional.ofNullable(companyDb.findById(companyId));
-        Company company = optionalCompany
+        Company company = companyDb.findById(companyId)
                 .orElseThrow(() -> new IllegalArgumentException("Company not found with id: " + companyId));
 
         return reservationDb.findByCompany(company)
@@ -43,16 +45,16 @@ public class ReservationServiceImpl implements ReservationService {
                 .collect(Collectors.toList());
     }
 
+
     @Override
     public List<ReservationDto> getUpcomingReservations(UUID companyId) {
-        Optional<Company> optionalCompany = Optional.ofNullable(companyDb.findById(companyId));
-        Company company = optionalCompany
+        Company company = companyDb.findById(companyId)
                 .orElseThrow(() -> new IllegalArgumentException("Company not found with id: " + companyId));
 
         return reservationDb.findByCompanyAndReservationDateAfterAndStatusNot(
                         company,
                         LocalDateTime.now(),
-                        Reservation.ReservationStatus.CANCELLED)
+                        ReservationStatus.CANCELLED)
                 .stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
@@ -60,8 +62,7 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Override
     public List<ReservationDto> getReservationsByDate(UUID companyId, LocalDateTime date) {
-        Optional<Company> optionalCompany = Optional.ofNullable(companyDb.findById(companyId));
-        Company company = optionalCompany
+        Company company = companyDb.findById(companyId)
                 .orElseThrow(() -> new IllegalArgumentException("Company not found with id: " + companyId));
 
         LocalDateTime startOfDay = date.toLocalDate().atStartOfDay();
@@ -89,40 +90,49 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
     @Override
-    public void checkInReservation(Long id) {
+    public ReservationDto checkInReservation(Long id) {
         Reservation reservation = reservationDb.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Reservation not found with id: " + id));
 
-        if (reservation.getStatus() != Reservation.ReservationStatus.CONFIRMED) {
-            throw new IllegalStateException("Only confirmed reservations can be checked in");
+        if (!canCheckIn(reservation)) {
+            throw new IllegalStateException("Cannot check in at this time");
         }
+
+        reservation.setStatus(ReservationStatus.ARRIVED);
+        reservation.setCheckInTime(LocalDateTime.now());
 
         if (reservation.getDiningTable() != null) {
-            reservation.getDiningTable().setStatus(DiningTable.TableStatus.OCCUPIED);
+            reservation.getDiningTable().setStatus(TableStatus.OCCUPIED);
         }
 
-        reservation.setStatus(Reservation.ReservationStatus.COMPLETED);
-        reservationDb.save(reservation);
+        Reservation savedReservation = reservationDb.save(reservation);
+        return convertToDto(savedReservation);
     }
 
     @Override
-    public void checkOutReservation(Long id) {
+    public ReservationDto checkOutReservation(Long id) {
         Reservation reservation = reservationDb.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Reservation not found with id: " + id));
 
-        if (reservation.getStatus() != Reservation.ReservationStatus.COMPLETED) {
-            throw new IllegalStateException("Only checked-in reservations can be checked out");
+        if (reservation.getStatus() != ReservationStatus.ARRIVED) {
+            throw new IllegalStateException("Only arrived reservations can be checked out");
         }
+
+        reservation.setStatus(ReservationStatus.COMPLETED);
+        reservation.setCheckOutTime(LocalDateTime.now());
 
         if (reservation.getDiningTable() != null) {
-            reservation.getDiningTable().setStatus(DiningTable.TableStatus.AVAILABLE);
+            reservation.getDiningTable().setStatus(TableStatus.AVAILABLE);
         }
 
-        reservationDb.save(reservation);
+        Reservation savedReservation = reservationDb.save(reservation);
+        return convertToDto(savedReservation);
     }
+
+
+
     @Override
     public ReservationDto createReservation(ReservationDto reservationDto) {
-        // Basic validation
         if (reservationDto.getCustomerName() == null || reservationDto.getCustomerName().trim().isEmpty()) {
             throw new IllegalArgumentException("Customer name cannot be empty");
         }
@@ -130,16 +140,13 @@ public class ReservationServiceImpl implements ReservationService {
             throw new IllegalArgumentException("Number of people must be greater than 0");
         }
 
-        // Find the company
-        Optional<Company> optionalCompany = Optional.ofNullable(companyDb.findById(reservationDto.getCompanyId()));
-        Company company = optionalCompany
+        Company company = companyDb.findById(reservationDto.getCompanyId())
                 .orElseThrow(() -> new IllegalArgumentException("Company not found with id: " + reservationDto.getCompanyId()));
 
         Reservation reservation = convertToEntity(reservationDto);
         reservation.setCompany(company);
-        reservation.setStatus(Reservation.ReservationStatus.PENDING);
+        reservation.setStatus(ReservationStatus.CONFIRMED);
 
-        // If a specific table is requested, validate and assign it
         if (reservationDto.getTableNumber() != null) {
             DiningTable table = tableDb.findByCompanyIdAndTableNumber(company.getId(), reservationDto.getTableNumber())
                     .orElseThrow(() -> new IllegalArgumentException("Table not found"));
@@ -153,6 +160,7 @@ public class ReservationServiceImpl implements ReservationService {
         Reservation savedReservation = reservationDb.save(reservation);
         return convertToDto(savedReservation);
     }
+
 
     @Override
     public List<ReservationDto> getAllReservations() {
@@ -174,25 +182,20 @@ public class ReservationServiceImpl implements ReservationService {
         Reservation existingReservation = reservationDb.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Reservation not found with id: " + id));
 
-        // Check if the reservation can be modified
         if (!canBeModified(existingReservation)) {
             throw new IllegalStateException("Reservation cannot be modified");
         }
 
-        // Update basic fields
         existingReservation.setCustomerName(reservationDto.getCustomerName());
         existingReservation.setReservationDate(LocalDateTime.parse(reservationDto.getReservationDate()));
         existingReservation.setNumberOfPeople(reservationDto.getNumberOfPeople());
 
-        // Update company if changed
         if (!existingReservation.getCompany().getId().equals(reservationDto.getCompanyId())) {
-            Optional<Company> optionalCompany = Optional.ofNullable(companyDb.findById(reservationDto.getCompanyId()));
-            Company newCompany = optionalCompany
+            Company newCompany = companyDb.findById(reservationDto.getCompanyId())
                     .orElseThrow(() -> new IllegalArgumentException("Company not found with id: " + reservationDto.getCompanyId()));
             existingReservation.setCompany(newCompany);
         }
 
-        // Update table if specified
         if (reservationDto.getTableNumber() != null) {
             DiningTable newTable = tableDb.findByCompanyIdAndTableNumber(
                             existingReservation.getCompany().getId(),
@@ -209,36 +212,109 @@ public class ReservationServiceImpl implements ReservationService {
         return convertToDto(updatedReservation);
     }
 
-    @Override
+
     public void cancelReservation(Long id) {
         Reservation reservation = reservationDb.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Reservation not found with id: " + id));
 
-        if (reservation.getStatus() == Reservation.ReservationStatus.CANCELLED) {
-            throw new IllegalStateException("Reservation is already cancelled");
+        if (reservation.getStatus() != ReservationStatus.CONFIRMED) {
+            throw new IllegalStateException("Only confirmed reservations can be cancelled");
         }
 
-        if (reservation.getReservationDate().isBefore(LocalDateTime.now())) {
-            throw new IllegalStateException("Cannot cancel past reservations");
-        }
-
-        reservation.setStatus(Reservation.ReservationStatus.CANCELLED);
+        reservation.setStatus(ReservationStatus.CANCELLED);
         if (reservation.getDiningTable() != null) {
-            reservation.getDiningTable().setStatus(DiningTable.TableStatus.AVAILABLE);
+            reservation.getDiningTable().setStatus(TableStatus.AVAILABLE);
         }
+
         reservationDb.save(reservation);
+    }
+    @Override
+    public List<ReservationDto> findByStatus(ReservationStatus status) {
+        return reservationDb.findByStatus(status)
+                .stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+    @Override
+    public ReservationDto extendReservation(Long id, Integer duration) {
+        Reservation reservation = reservationDb.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Reservation not found with id: " + id));
+
+        if (reservation.getStatus() != ReservationStatus.ARRIVED) {
+            throw new IllegalStateException("Can only extend active reservations");
+        }
+
+        // Add the additional duration and update end time
+        reservation.setDuration(reservation.getDuration() + duration);
+        reservation.setEndTime(reservation.getEndTime().plusMinutes(duration));
+
+        Reservation savedReservation = reservationDb.save(reservation);
+        return convertToDto(savedReservation);
+    }
+    @Override
+    public List<ReservationDto> findByCompanyAndStatus(UUID companyId, ReservationStatus status) {
+        Company company = companyDb.findById(companyId)
+                .orElseThrow(() -> new IllegalArgumentException("Company not found with id: " + companyId));
+
+        return reservationDb.findByCompanyAndStatus(company, status)
+                .stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+    @Override
+    public boolean isTimeSlotAvailable(UUID companyId, Long tableId, String dateTimeStr, Integer duration) {
+        LocalDateTime requestedDateTime = LocalDateTime.parse(dateTimeStr);
+
+        LocalDateTime requestedEndTime = requestedDateTime.plusMinutes(duration);
+
+        DiningTable table = tableDb.findById(tableId)
+                .orElseThrow(() -> new IllegalArgumentException("Table not found"));
+
+        if (!table.getCompany().getId().equals(companyId)) {
+            throw new IllegalArgumentException("Table does not belong to specified company");
+        }
+
+        boolean hasOverlap = reservationDb.existsOverlappingReservation(
+                tableId,
+                requestedDateTime,
+                requestedEndTime
+        );
+
+        return !hasOverlap && table.getStatus() != TableStatus.OUT_OF_SERVICE;
+    }
+
+    private boolean canCheckIn(Reservation reservation) {
+        if (reservation.getStatus() != ReservationStatus.CONFIRMED) {
+            return false;
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime reservationTime = reservation.getReservationDate();
+
+        long minutesDifference = Math.abs(java.time.Duration.between(now, reservationTime).toMinutes());
+
+        // Allow check-in within 15 minutes before or after reservation time
+        return minutesDifference <= 15;
+    }
+
+    @Override
+    public List<ReservationDto> getReservationsByTimeRange(LocalDateTime startTime, LocalDateTime endTime) {
+        return reservationDb.findByReservationDateBetween(startTime, endTime)
+                .stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
     }
 
 
-
     private boolean canBeModified(Reservation reservation) {
-        return reservation.getStatus() != Reservation.ReservationStatus.CANCELLED &&
-                reservation.getStatus() != Reservation.ReservationStatus.COMPLETED &&
+        return reservation.getStatus() != ReservationStatus.CANCELLED &&
+                reservation.getStatus() != ReservationStatus.COMPLETED &&
                 reservation.getReservationDate().isAfter(LocalDateTime.now());
     }
 
     private ReservationDto convertToDto(Reservation reservation) {
         ReservationDto dto = new ReservationDto();
+        // Existing fields
         dto.setId(reservation.getId());
         dto.setCustomerName(reservation.getCustomerName());
         dto.setCustomerEmail(reservation.getCustomerEmail());
@@ -246,7 +322,19 @@ public class ReservationServiceImpl implements ReservationService {
         dto.setReservationDate(reservation.getReservationDate().toString());
         dto.setNumberOfPeople(reservation.getNumberOfPeople());
         dto.setSpecialRequests(reservation.getSpecialRequests());
-        dto.setStatus(reservation.getStatus().toString());
+        dto.setStatus(reservation.getStatus());
+
+        // New fields
+        dto.setDuration(reservation.getDuration());
+        if (reservation.getEndTime() != null) {
+            dto.setEndTime(reservation.getEndTime());
+        }
+        if (reservation.getCheckInTime() != null) {
+            dto.setCheckedInAt(reservation.getCheckInTime());
+        }
+        if (reservation.getCheckOutTime() != null) {
+            dto.setCheckedOutAt(reservation.getCheckOutTime());
+        }
 
         if (reservation.getCompany() != null) {
             dto.setCompanyId(reservation.getCompany().getId());
@@ -254,6 +342,7 @@ public class ReservationServiceImpl implements ReservationService {
         }
 
         if (reservation.getDiningTable() != null) {
+            dto.setTableId(reservation.getDiningTable().getId());
             dto.setTableNumber(reservation.getDiningTable().getTableNumber());
         }
 
@@ -268,6 +357,11 @@ public class ReservationServiceImpl implements ReservationService {
         reservation.setReservationDate(LocalDateTime.parse(dto.getReservationDate()));
         reservation.setNumberOfPeople(dto.getNumberOfPeople());
         reservation.setSpecialRequests(dto.getSpecialRequests());
+
+        reservation.setDuration(dto.getDuration() != null ? dto.getDuration() : 120);
+        LocalDateTime startTime = LocalDateTime.parse(dto.getReservationDate());
+        reservation.setEndTime(startTime.plusMinutes(reservation.getDuration()));
+
         return reservation;
     }
 }

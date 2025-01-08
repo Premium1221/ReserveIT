@@ -1,124 +1,89 @@
 package com.reserveit.dto;
 
+import com.reserveit.enums.ReservationStatus;
 import jakarta.validation.constraints.*;
+import lombok.Getter;
+import lombok.Setter;
+
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 public class ReservationDto {
+    @Setter
+    @Getter
     private Long id;
 
+    @Setter
+    @Getter
     @NotBlank(message = "Customer name is required")
     private String customerName;
 
+    @Setter
+    @Getter
     @NotBlank(message = "Customer email is required")
     @Email(message = "Invalid email format")
     private String customerEmail;
 
+    @Setter
+    @Getter
     @Pattern(regexp = "^[0-9]{10}$", message = "Phone number must be 10 digits")
     private String customerPhone;
 
+    @Setter
+    @Getter
     @NotNull(message = "Reservation date is required")
     private String reservationDate;
 
+    // Add duration in minutes (default 2 hours = 120 minutes)
+    @Setter
+    @Getter
+    @Min(value = 30, message = "Minimum duration is 30 minutes")
+    @Max(value = 240, message = "Maximum duration is 4 hours")
+    private int durationMinutes = 120;
+
+    @Setter
+    @Getter
     @Min(value = 1, message = "Number of people must be at least 1")
     private int numberOfPeople;
 
+    @Setter
+    @Getter
     @NotNull(message = "Company ID is required")
     private UUID companyId;
 
+    @Setter
+    @Getter
     private String companyName;
+
+    @Setter
+    @Getter
+    private Long tableId;
+
+    @Setter
+    @Getter
     private String tableNumber;
-    private String status;
+
+    @Setter
+    @Getter
+    private ReservationStatus status;
+
+    @Setter
+    @Getter
     private String specialRequests;
 
-    // Constructors
-    public ReservationDto() {}
+    @Setter
+    @Getter
+    private LocalDateTime checkedInAt;
 
-    // Getters and Setters
-    public Long getId() {
-        return id;
-    }
+    @Setter
+    @Getter
+    private LocalDateTime checkedOutAt;
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    @Setter
+    @Getter
+    private Integer duration;
 
-    public String getCustomerName() {
-        return customerName;
-    }
-
-    public void setCustomerName(String customerName) {
-        this.customerName = customerName;
-    }
-
-    public String getCustomerEmail() {
-        return customerEmail;
-    }
-
-    public void setCustomerEmail(String customerEmail) {
-        this.customerEmail = customerEmail;
-    }
-
-    public String getCustomerPhone() {
-        return customerPhone;
-    }
-
-    public void setCustomerPhone(String customerPhone) {
-        this.customerPhone = customerPhone;
-    }
-
-    public String getReservationDate() {
-        return reservationDate;
-    }
-
-    public void setReservationDate(String reservationDate) {
-        this.reservationDate = reservationDate;
-    }
-
-    public int getNumberOfPeople() {
-        return numberOfPeople;
-    }
-
-    public void setNumberOfPeople(int numberOfPeople) {
-        this.numberOfPeople = numberOfPeople;
-    }
-
-    public UUID getCompanyId() {
-        return companyId;
-    }
-
-    public void setCompanyId(UUID companyId) {
-        this.companyId = companyId;
-    }
-
-    public String getCompanyName() {
-        return companyName;
-    }
-
-    public void setCompanyName(String companyName) {
-        this.companyName = companyName;
-    }
-
-    public String getTableNumber() {
-        return tableNumber;
-    }
-
-    public void setTableNumber(String tableNumber) {
-        this.tableNumber = tableNumber;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public String getSpecialRequests() {
-        return specialRequests;
-    }
-
-    public void setSpecialRequests(String specialRequests) {
-        this.specialRequests = specialRequests;
-    }
+    @Setter
+    @Getter
+    private LocalDateTime endTime;
 }

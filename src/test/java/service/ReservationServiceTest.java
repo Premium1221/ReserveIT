@@ -4,6 +4,7 @@ import com.reserveit.database.interfaces.CompanyDatabase;
 import com.reserveit.database.interfaces.DiningTableDatabase;
 import com.reserveit.database.interfaces.ReservationDatabase;
 import com.reserveit.dto.ReservationDto;
+import com.reserveit.enums.ReservationStatus;
 import com.reserveit.model.Company;
 import com.reserveit.model.Reservation;
 import com.reserveit.logic.impl.ReservationServiceImpl;
@@ -72,7 +73,7 @@ class ReservationServiceTest {
         savedReservation.setNumberOfPeople(4);
         savedReservation.setCompany(mockCompany);
 
-        when(companyDb.findById(companyId)).thenReturn(mockCompany);
+        when(companyDb.findById(companyId)).thenReturn(Optional.of(mockCompany));
         when(reservationDb.save(any(Reservation.class))).thenReturn(savedReservation);
 
         // Act
@@ -134,7 +135,7 @@ class ReservationServiceTest {
         updateDto.setCompanyId(mockCompany.getId());
 
         when(reservationDb.findById(reservationId)).thenReturn(Optional.of(existingReservation));
-        when(companyDb.findById(mockCompany.getId())).thenReturn(mockCompany);
+        when(companyDb.findById(mockCompany.getId())).thenReturn(Optional.of(mockCompany));
 
         Reservation updatedReservation = new Reservation();
         updatedReservation.setId(reservationId);
@@ -165,7 +166,7 @@ class ReservationServiceTest {
         Reservation mockReservation = new Reservation();
         mockReservation.setId(reservationId);
         mockReservation.setReservationDate(futureDate);
-        mockReservation.setStatus(Reservation.ReservationStatus.CONFIRMED);
+        mockReservation.setStatus(ReservationStatus.CONFIRMED);
 
         when(reservationDb.findById(reservationId)).thenReturn(Optional.of(mockReservation));
         when(reservationDb.save(any(Reservation.class))).thenReturn(mockReservation);
@@ -176,7 +177,7 @@ class ReservationServiceTest {
         // Assert
         verify(reservationDb).findById(reservationId);
         verify(reservationDb).save(any(Reservation.class));
-        assertEquals(Reservation.ReservationStatus.CANCELLED, mockReservation.getStatus());
+        assertEquals(ReservationStatus.CANCELLED, mockReservation.getStatus());
     }
 
     @Test
@@ -206,7 +207,8 @@ class ReservationServiceTest {
         dto.setCustomerName("Valid Name");
         dto.setNumberOfPeople(1);
 
-        when(companyDb.findById(invalidCompanyId)).thenReturn(null);
+        // Return Optional.empty() instead of null
+        when(companyDb.findById(invalidCompanyId)).thenReturn(Optional.empty());
 
         // Act & Assert
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
@@ -224,7 +226,7 @@ class ReservationServiceTest {
         reservation.setCustomerName("Test Customer");
         reservation.setReservationDate(LocalDateTime.now().plusDays(1)); // Ensure reservationDate is set
 
-        when(companyDb.findById(companyId)).thenReturn(mockCompany);
+        when(companyDb.findById(companyId)).thenReturn(Optional.of(mockCompany));
         when(reservationDb.findByCompany(mockCompany)).thenReturn(Arrays.asList(reservation));
 
         // Act
@@ -255,13 +257,13 @@ class ReservationServiceTest {
         Reservation upcomingReservation = new Reservation();
         upcomingReservation.setCompany(mockCompany);
         upcomingReservation.setReservationDate(LocalDateTime.now().plusDays(1));
-        upcomingReservation.setStatus(Reservation.ReservationStatus.CONFIRMED);
+        upcomingReservation.setStatus(ReservationStatus.CONFIRMED);
 
-        when(companyDb.findById(companyId)).thenReturn(mockCompany);
+        when(companyDb.findById(companyId)).thenReturn(Optional.of(mockCompany));
         when(reservationDb.findByCompanyAndReservationDateAfterAndStatusNot(
                 eq(mockCompany),
                 any(LocalDateTime.class),
-                eq(Reservation.ReservationStatus.CANCELLED)
+                eq(ReservationStatus.CANCELLED)
         )).thenReturn(Arrays.asList(upcomingReservation));
 
         // Act

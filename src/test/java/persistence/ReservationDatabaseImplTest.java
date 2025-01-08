@@ -1,4 +1,5 @@
 package persistence;
+import com.reserveit.enums.ReservationStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -53,20 +54,16 @@ public class ReservationDatabaseImplTest {
 
     @Test
     void findByCompanyAndReservationDateAfterAndStatusNot_ShouldReturnFilteredReservations() {
-        // Arrange
         Company company = new Company();
         LocalDateTime date = LocalDateTime.now();
-        Reservation.ReservationStatus status = Reservation.ReservationStatus.CANCELLED;
+        ReservationStatus status = ReservationStatus.CANCELLED;
 
         List<Reservation> expectedReservations = Arrays.asList(new Reservation(), new Reservation());
         when(reservationRepository.findByCompanyAndReservationDateAfterAndStatusNot(company, date, status))
                 .thenReturn(expectedReservations);
 
-        // Act
-        List<Reservation> actualReservations =
-                reservationDatabase.findByCompanyAndReservationDateAfterAndStatusNot(company, date, status);
+        List<Reservation> actualReservations = reservationDatabase.findByCompanyAndReservationDateAfterAndStatusNot(company, date, status);
 
-        // Assert
         assertEquals(expectedReservations, actualReservations);
         verify(reservationRepository).findByCompanyAndReservationDateAfterAndStatusNot(company, date, status);
     }
