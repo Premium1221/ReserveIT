@@ -8,9 +8,9 @@ stages:
 # Build the application
 build:
   stage: build
-  image: gradle:8.8-jdk17
   script:
-    - ./gradlew clean assemble --no-daemon
+    - >
+      gradlew.bat clean assemble --no-daemon
   artifacts:
     paths:
       - build/libs/*.jar
@@ -18,24 +18,26 @@ build:
 # Run tests
 test:
   stage: test
-  image: gradle:8.8-jdk17
   script:
-    - ./gradlew test jacocoTestReport --no-daemon \
-        -Dspring.profiles.active=test \
-        -Dspring.datasource.url="jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;MODE=MySQL;DATABASE_TO_UPPER=false" \
-        -Dspring.datasource.driver-class-name=org.h2.Driver \
-        -Dspring.jpa.database-platform=org.hibernate.dialect.H2Dialect \
-        -Dspring.jpa.hibernate.ddl-auto=update
+    - >
+      gradlew.bat test jacocoTestReport --no-daemon
+      -Dspring.profiles.active=test
+      -Dspring.datasource.url="jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;MODE=MySQL;DATABASE_TO_UPPER=false"
+      -Dspring.datasource.driver-class-name=org.h2.Driver
+      -Dspring.jpa.database-platform=org.hibernate.dialect.H2Dialect
+      -Dspring.jpa.hibernate.ddl-auto=update
 
 # Run SonarQube analysis
 sonar:
   stage: sonar
-  image: gradle:8.8-jdk17
   variables:
     SONAR_HOST_URL: $SONAR_HOST_URL
     SONAR_TOKEN: $SONAR_TOKEN
   script:
-    - ./gradlew sonar --no-daemon -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.token=$SONAR_TOKEN
+    - >
+      gradlew.bat sonar --no-daemon
+      -Dsonar.host.url=%SONAR_HOST_URL%
+      -Dsonar.token=%SONAR_TOKEN%
 
 
 # Build Docker image
