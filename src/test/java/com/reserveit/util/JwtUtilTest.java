@@ -4,7 +4,6 @@ import com.reserveit.logic.interfaces.StaffService;
 import com.reserveit.model.Company;
 import com.reserveit.model.Staff;
 import com.reserveit.model.User;
-import com.reserveit.util.JwtUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

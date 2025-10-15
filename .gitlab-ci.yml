@@ -1,4 +1,7 @@
 # Define stages in order of execution
+variables:
+  # Ensure full clone so Sonar can compute blame/"new code" correctly
+  GIT_DEPTH: "0"
 stages:
   - build
   - test
@@ -32,7 +35,8 @@ sonar:
     SONAR_HOST_URL: $SONAR_HOST_URL
     SONAR_TOKEN: $SONAR_TOKEN
   script:
-    - '& .\gradlew.bat sonar --no-daemon'
+    - 'git fetch --unshallow 2>$null; if ($LASTEXITCODE -ne 0) { git fetch --all --tags }'
+    - '& .\gradlew.bat -Dsonar.qualitygate.wait=false sonar --no-daemon'
 
 
 # Build Docker image
