@@ -4,12 +4,14 @@ import com.reserveit.database.interfaces.UserDatabase;
 import com.reserveit.model.Staff;
 import com.reserveit.model.User;
 import com.reserveit.repository.UserRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+@Slf4j
 @Component
 public class UserDatabaseImpl implements UserDatabase {
     private final UserRepository userRepository;
@@ -25,8 +27,8 @@ public class UserDatabaseImpl implements UserDatabase {
 
     @Override
     public User save(User user) {
-        if (user instanceof Staff staff) {
-            System.out.println("Saving a Staff entity");
+        if (user instanceof Staff ) {
+            log.info("Saving a Staff entity");
         }
         return userRepository.save(user);
     }
@@ -43,7 +45,7 @@ public class UserDatabaseImpl implements UserDatabase {
 
     @Override
     public void deleteById(UUID id) {
-        System.out.println("Deleting user with ID: " + id);
+        log.info("Deleting user with ID: {}", id);
         userRepository.deleteById(id);
     }
 

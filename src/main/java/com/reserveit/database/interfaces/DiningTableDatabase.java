@@ -1,9 +1,7 @@
 package com.reserveit.database.interfaces;
 
-import com.reserveit.enums.TableShape;
 import com.reserveit.enums.TableStatus;
 import com.reserveit.model.DiningTable;
-import jakarta.transaction.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -28,16 +26,6 @@ public interface DiningTableDatabase {
     // Update operations
     int updateTablePosition(Long tableId, UUID companyId, int xPosition, int yPosition);
     int updateTableStatus(Long tableId, TableStatus status);
-    int updateTableProperties(
-            Long tableId,
-            UUID companyId,
-            String tableNumber,
-            int capacity,
-            TableShape shape,
-            TableStatus status,
-            boolean isOutdoor,
-            int floorLevel
-    );
 
     // Save operations
     DiningTable save(DiningTable table);
@@ -45,4 +33,5 @@ public interface DiningTableDatabase {
 
     // Delete operation
     void deleteById(Long id);
+
 }

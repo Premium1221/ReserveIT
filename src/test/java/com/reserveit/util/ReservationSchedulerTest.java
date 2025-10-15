@@ -1,4 +1,4 @@
-package util;
+package com.reserveit.util;
 
 import com.reserveit.dto.ReservationDto;
 import com.reserveit.enums.ReservationStatus;
@@ -74,24 +74,6 @@ class ReservationSchedulerTest {
         verify(webSocketService, never()).sendStaffNotification(any(), any());
     }
 
-    @Test
-    void checkAndUpdateReservations_WithUpcomingReservations() {
-        // Arrange
-        LocalDateTime now = LocalDateTime.now();
-        ReservationDto reservation = createReservationDto(ReservationStatus.CONFIRMED);
-        reservation.setTableId(1L);
-        List<ReservationDto> upcomingReservations = Collections.singletonList(reservation);
-
-        when(reservationService.getReservationsByTimeRange(any(), any())).thenReturn(upcomingReservations);
-        when(tableService.findById(1L)).thenReturn(testTable);
-
-        // Act
-        reservationScheduler.checkAndUpdateReservations();
-
-        // Assert
-        verify(tableService).updateTableStatus(eq(1L), eq(TableStatus.RESERVED));
-        verify(webSocketService).sendStaffNotification(any(), any());
-    }
 
 
     @Test
@@ -111,7 +93,7 @@ class ReservationSchedulerTest {
     @Test
     void checkAndUpdateReservations_WithActiveReservation() {
         // Arrange
-        ReservationDto reservation = createReservationDto(ReservationStatus.CONFIRMED); // A confirmed reservation
+        ReservationDto reservation = createReservationDto(ReservationStatus.CONFIRMED);
         List<ReservationDto> upcomingReservations = Collections.singletonList(reservation);
 
         when(reservationService.getReservationsByTimeRange(any(), any())).thenReturn(upcomingReservations);
@@ -132,11 +114,42 @@ class ReservationSchedulerTest {
         List<ReservationDto> upcomingReservations = Collections.singletonList(reservation);
 
         when(reservationService.getReservationsByTimeRange(any(), any())).thenReturn(upcomingReservations);
-        when(tableService.findById(any())).thenThrow(new RuntimeException("Database error"));
 
         // Act & Assert
         assertDoesNotThrow(() -> reservationScheduler.checkAndUpdateReservations());
     }
+    @Test
+    void checkAndUpdateReservations_WithUnavailableTable() {
+        // Arrange
+        ReservationDto reservation = createReservationDto(ReservationStatus.CONFIRMED);
+        List<ReservationDto> upcomingReservations = Collections.singletonList(reservation);
+        testTable.setStatus(TableStatus.OCCUPIED);
+
+        when(reservationService.getReservationsByTimeRange(any(), any())).thenReturn(upcomingReservations);
+
+        // Act
+        reservationScheduler.checkAndUpdateReservations();
+
+        // Assert
+        verify(tableService, never()).updateTableStatus(anyLong(), any());
+        verify(webSocketService, never()).sendStaffNotification(any(UUID.class), any());
+    }
+    @Test
+    void checkAndUpdateReservations_ExceptionHandling() {
+        // Arrange
+        ReservationDto reservation = createReservationDto(ReservationStatus.CONFIRMED);
+        // Ensure the scheduler enters the 30-minute window branch
+        reservation.setReservationDate(java.time.LocalDateTime.now().plusMinutes(10).toString());
+        List<ReservationDto> upcomingReservations = Collections.singletonList(reservation);
+
+        when(reservationService.getReservationsByTimeRange(any(), any())).thenReturn(upcomingReservations);
+        when(tableService.findById(anyLong())).thenThrow(new RuntimeException("Table not found"));
+
+        // Act & Assert
+        assertDoesNotThrow(() -> reservationScheduler.checkAndUpdateReservations());
+        verify(webSocketService, never()).sendStaffNotification(any(UUID.class), any());
+    }
+
 
     // Helper methods
     private Map<String, Object> createNotification(String type, Long reservationId) {

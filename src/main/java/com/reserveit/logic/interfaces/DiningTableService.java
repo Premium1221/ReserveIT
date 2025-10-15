@@ -2,6 +2,7 @@ package com.reserveit.logic.interfaces;
 
 import com.reserveit.dto.TablePositionDto;
 import com.reserveit.enums.TableStatus;
+import com.reserveit.model.DiningTable;
 
 import java.util.List;
 import java.util.UUID;
@@ -25,6 +26,9 @@ public interface DiningTableService {
 
     TablePositionDto updateTable(Long tableId, TablePositionDto updates);
 
+    void updateTableStatus(Long tableId);
+    DiningTable findById(Long id);
 
 
-}
+
+    }

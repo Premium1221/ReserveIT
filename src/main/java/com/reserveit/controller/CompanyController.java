@@ -7,6 +7,8 @@ import com.reserveit.enums.TableStatus;
 import com.reserveit.logic.interfaces.CompanyService;
 import com.reserveit.logic.interfaces.DiningTableService;
 import com.reserveit.logic.interfaces.ReservationService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -18,8 +20,12 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/api/companies")
-@CrossOrigin(origins = "http://localhost:5200", allowCredentials = "true")
+@CrossOrigin(
+        origins = {"http://localhost:5200", "http://127.0.0.1:5200", "http://172.29.96.1:5200"},
+        allowCredentials = "true"
+)
 public class CompanyController {
+    private static final Logger log = LoggerFactory.getLogger(CompanyController.class);
     private final CompanyService companyService;
     private final ReservationService reservationService;
     private final DiningTableService tableService;
@@ -31,18 +37,19 @@ public class CompanyController {
     }
 
     @GetMapping
-    public ResponseEntity<?> getAllCompanies() {
+    public ResponseEntity<Object> getAllCompanies() {
         try {
             List<CompanyDto> companies = companyService.getAllCompanies();
             return ResponseEntity.ok(companies);
         } catch (Exception e) {
-            System.err.println("Error fetching companies: " + e.getMessage());
+            log.error("Error fetching companies: {}", e.getMessage());
             e.printStackTrace();
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error fetching companies: " + e.getMessage());
         }
     }
+
 
     @PostMapping
     public ResponseEntity<CompanyDto> createCompany(@RequestBody CompanyDto companyDto) {
@@ -57,30 +64,30 @@ public class CompanyController {
     }
 
     @GetMapping("/{id}/dashboard")
-    @PreAuthorize("hasRole('MANAGER')")  // Simplified security check
-    public ResponseEntity<?> getCompanyDashboard(@PathVariable UUID id) {
+    @PreAuthorize("hasRole('MANAGER')")
+    public ResponseEntity<Map<String, Object>> getCompanyDashboard(@PathVariable UUID id) {
         try {
             // Debug log
-            System.out.println("Accessing dashboard for company: " + id);
+            log.info("Accessing dashboard for company: {}", id);
 
             CompanyDto company = companyService.getCompanyById(id);
 
             // Debug log
-            System.out.println("Found company: " + company.getName());
+            log.info("Found company: {}", company.getName());
 
             List<TablePositionDto> tables = tableService.getTablesByCompany(id);
             List<ReservationDto> todayReservations = reservationService.getReservationsByDate(
                     id, LocalDateTime.now());
 
             Map<String, Object> stats = new HashMap<>();
-            stats.put("totalReservations", todayReservations.size());
+            stats.put("totalReservations", (long) todayReservations.size());
             stats.put("availableTables", tables.stream()
                     .filter(t -> t.getStatus() == TableStatus.AVAILABLE)
                     .count());
             stats.put("occupiedTables", tables.stream()
                     .filter(t -> t.getStatus() == TableStatus.OCCUPIED)
                     .count());
-            stats.put("totalTables", tables.size());
+            stats.put("totalTables", (long) tables.size());
 
             Map<String, Object> response = new HashMap<>();
             response.put("company", company);
@@ -89,12 +96,14 @@ public class CompanyController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             // Debug log
-            System.err.println("Error in dashboard endpoint: " + e.getMessage());
+            log.error("Error in dashboard endpoint: {}", e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error fetching dashboard data: " + e.getMessage());
+                    .body(Map.of("error", "Error fetching dashboard data: " + e.getMessage()));
         }
     }
+
+
     @GetMapping("/{id}/name")
     public ResponseEntity<String> getCompanyNameById(@PathVariable UUID id) {
         try {

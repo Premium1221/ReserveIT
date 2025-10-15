@@ -11,12 +11,13 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Getter
 @Setter
 @NoArgsConstructor
-@ToString
 public class TablePositionDto {
     private Long id;
 
@@ -48,6 +49,9 @@ public class TablePositionDto {
     private boolean isOutdoor;
     private int floorLevel;
 
+    private List<ReservationDto> reservations = new ArrayList<>();
+
+
     // Copy constructor
     public TablePositionDto(TablePositionDto other) {
         this.id = other.id;
@@ -72,12 +76,15 @@ public class TablePositionDto {
         dto.setShape(table.getShape());
         dto.setStatus(table.getStatus());
         dto.setCapacity(table.getCapacity());
-        dto.setCompanyId(table.getCompany().getId());
+
+        dto.setCompanyId(table.getCompany() != null ? table.getCompany().getId() : null);
+
         dto.setOutdoor(table.isOutdoor());
         dto.setFloorLevel(table.getFloorLevel());
         dto.setRotation(table.getRotation());
         return dto;
     }
+
 
     @Override
     public String toString() {
@@ -88,26 +95,38 @@ public class TablePositionDto {
     }
 
     public void validate() {
+        // Validate ID
         if (id == null) {
             throw new IllegalArgumentException("Table ID cannot be null");
         }
+
+        // Validate positions
         if (xPosition < 0 || yPosition < 0) {
             throw new IllegalArgumentException(
-                    String.format("Invalid position values: (%d,%d)", xPosition, yPosition)
+                    String.format("Invalid position values: (%d, %d)", xPosition, yPosition)
             );
         }
+
         if (companyId == null) {
             throw new IllegalArgumentException("Company ID cannot be null");
         }
+
+        if (tableNumber == null || tableNumber.trim().isEmpty()) {
+            throw new IllegalArgumentException("Table number cannot be null or empty");
+        }
+
+        if (capacity <= 0) {
+            throw new IllegalArgumentException("Table capacity must be greater than 0");
+        }
+
+        if (shape == null) {
+            throw new IllegalArgumentException("Table shape cannot be null");
+        }
+
+        if (status == null) {
+            throw new IllegalArgumentException("Table status cannot be null");
+        }
     }
 
-    public void updatePosition(int newX, int newY) {
-        if (newX < 0 || newY < 0) {
-            throw new IllegalArgumentException(
-                    String.format("Invalid position values: (%d,%d)", newX, newY)
-            );
-        }
-        this.xPosition = newX;
-        this.yPosition = newY;
-    }
+
 }

@@ -21,6 +21,7 @@ public class CompanyDto {
     private String pictureUrl;
     // Constructors
     public CompanyDto() {
+        // For Tests
     }
 
     // Getters and Setters

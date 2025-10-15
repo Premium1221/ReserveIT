@@ -2,6 +2,7 @@ plugins {
     id("org.springframework.boot") version "3.1.0"
     id("io.spring.dependency-management") version "1.1.0"
     id("java")
+    // Keep recent SonarQube Gradle plugin; use the 'sonar' task (not deprecated 'sonarqube')
     id("org.sonarqube") version "5.1.0.4882"
     id("jacoco")
 }
@@ -42,8 +43,11 @@ dependencies {
 
     // Testing
     testImplementation("org.springframework.boot:spring-boot-starter-test")
-    testImplementation("org.junit.jupiter:junit-jupiter")
-    testImplementation("org.mockito:mockito-core")
+    testImplementation("org.springframework.security:spring-security-test")
+    testImplementation("com.h2database:h2")
+    testImplementation("org.junit.jupiter:junit-jupiter-api")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
+
 
     // JWT Dependencies
     implementation("io.jsonwebtoken:jjwt-api:0.11.5")
@@ -58,6 +62,9 @@ dependencies {
     implementation("org.webjars:webjars-locator-core")
     implementation("org.webjars:sockjs-client:1.0.2")
     implementation("org.webjars:stomp-websocket:2.3.3")
+
+    // H2 (for local dev profile)
+    runtimeOnly("com.h2database:h2")
 
 
 }
@@ -91,16 +98,24 @@ tasks.jacocoTestReport {
     dependsOn(tasks.test)
 }
 
+// Ensure coverage is generated before analysis (both task names)
+tasks.named("sonar") {
+    dependsOn(tasks.jacocoTestReport)
+}
+// Re-add legacy 'sonarqube' task wiring for local workflows using the old task name
 tasks.named("sonarqube") {
     dependsOn(tasks.jacocoTestReport)
 }
 
 sonarqube {
     properties {
-        property("sonar.projectKey", "reserveit")
-        property("sonar.projectName", "Reservation Management System")
-        property("sonar.host.url", System.getenv("SONAR_HOST_URL") ?: "http://localhost:9000")
-        property("sonar.token", System.getenv("SONAR_TOKEN") ?: "sqp_da30dc9526fe9de53169e8bf941ff20a097ca823")
+        // Project identity (key + display name)
+        property("sonar.projectKey", "reserveIT2.0")
+        property("sonar.projectName", "ReserveIT")
+        // Hardcoded local SonarQube server URL and token, per your request
+        property("sonar.host.url", "http://localhost:9000")
+        property("sonar.token", "sqp_835bf2823b0f645cfdc5f2c0e8f9929b590ef714")
+
         property("sonar.java.binaries", "build/classes/java/main")
         property("sonar.sources", "src/main/java")
         property("sonar.tests", "src/test/java")

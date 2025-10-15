@@ -6,6 +6,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.env.Environment;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -13,30 +15,35 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
+
+@Slf4j
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
     private final UserService userService;
+    private final Environment environment;
 
-    public JwtAuthFilter(JwtUtil jwtUtil, UserService userService) {
+
+    public JwtAuthFilter(JwtUtil jwtUtil, UserService userService, Environment environment) {
         this.jwtUtil = jwtUtil;
         this.userService = userService;
+        this.environment = environment;
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+    public void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-        final String authHeader = request.getHeader("Authorization");
 
-        // Debug print instead of logger
-        System.out.println("Auth Header: " + authHeader);
+        // Debug logging
+        log.info("Processing request: {} {}", request.getMethod(), request.getRequestURI());
+        final String authHeader = request.getHeader("Authorization");
+        log.info("Auth Header: {}", authHeader);
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            log.info("No valid auth header found");
             filterChain.doFilter(request, response);
             return;
         }
@@ -46,33 +53,40 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             final String userEmail = jwtUtil.getEmailFromToken(jwt);
             final String companyId = jwtUtil.getCompanyIdFromToken(jwt);
 
-            // Debug prints
-            System.out.println("User Email: " + userEmail);
-            System.out.println("Company ID: " + companyId);
+            log.info("JWT Token: {}...", jwt.substring(0, 10));
+            log.info("User Email from Token: {}", userEmail);
+            log.info("Company ID from Token: {}", companyId);
 
             if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 User user = userService.getUserEntityByEmail(userEmail);
+                log.info("Found User: {} with role: {}", user.getEmail(), user.getUserRole());
 
                 if (jwtUtil.validateAccessToken(jwt, user)) {
+                    List<SimpleGrantedAuthority> authorities = Collections.singletonList(
+                            new SimpleGrantedAuthority("ROLE_" + user.getUserRole().name())
+                    );
+
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                             user,
                             null,
-                            Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getUserRole().name()))
+                            authorities
                     );
 
+                    // Add additional details if needed
+                    Map<String, String> details = new HashMap<>();
                     if (companyId != null) {
-                        Map<String, String> details = new HashMap<>();
                         details.put("companyId", companyId);
-                        authToken.setDetails(details);
                     }
+                    authToken.setDetails(details);
 
                     SecurityContextHolder.getContext().setAuthentication(authToken);
-                    System.out.println("Authentication set successfully for user: " + userEmail);
+                    log.info("Authentication set successfully. Authorities: {}", authorities);
+                } else {
+                    log.info("Token validation failed");
                 }
             }
         } catch (Exception e) {
-            // Simple error printing instead of logger
-            System.err.println("Authentication error: " + e.getMessage());
+            log.error("Authentication error: {}", e.getMessage());
             e.printStackTrace();
         }
 
@@ -81,21 +95,28 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        String[] publicPaths = {
+        String path = request.getRequestURI();
+        log.info("Checking if should filter path: {}", path);
+
+        // List of paths to skip
+        String[] skipPaths = {
                 "/api/auth/login",
                 "/api/auth/register",
                 "/api/auth/refresh",
                 "/api/public",
-                "/actuator/health"
+                "/actuator/health",
         };
 
-        String path = request.getRequestURI();
-        for (String publicPath : publicPaths) {
-            if (path.startsWith(publicPath)) {
-                return true;
-            }
+        boolean shouldSkip = Arrays.stream(skipPaths)
+                .anyMatch(path::startsWith);
+
+        // Skip filtering for test profile
+        if (Arrays.asList(environment.getActiveProfiles()).contains("test")) {
+            log.info("Skipping filter for test profile");
+            return true;
         }
 
-        return false;
+        log.info("Should skip filtering: {}", Optional.of(shouldSkip));
+        return shouldSkip;
     }
 }

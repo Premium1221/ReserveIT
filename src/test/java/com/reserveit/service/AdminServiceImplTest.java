@@ -1,4 +1,4 @@
-package service;
+package com.reserveit.service;
 
 import com.reserveit.database.interfaces.UserDatabase;
 import com.reserveit.dto.RegisterRequest;

@@ -2,8 +2,11 @@ package com.reserveit.database.impl;
 
 import com.reserveit.database.interfaces.ReservationDatabase;
 import com.reserveit.model.Company;
+import com.reserveit.model.DiningTable;
 import com.reserveit.model.Reservation;
+import com.reserveit.model.User;
 import com.reserveit.repository.ReservationRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import com.reserveit.enums.ReservationStatus;
 
@@ -11,6 +14,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Component
 public class ReservationDatabaseImpl implements ReservationDatabase {
     private final ReservationRepository reservationRepository;
@@ -22,6 +26,15 @@ public class ReservationDatabaseImpl implements ReservationDatabase {
     @Override
     public List<Reservation> findByCompany(Company company) {
         return reservationRepository.findByCompany(company);
+    }
+    @Override
+    public void deleteAll(){
+        reservationRepository.deleteAll();
+    }
+
+    @Override
+    public List<Reservation> findByUser(User user) {
+        return reservationRepository.findByUser(user);
     }
 
     @Override
@@ -41,7 +54,16 @@ public class ReservationDatabaseImpl implements ReservationDatabase {
 
     @Override
     public boolean existsOverlappingReservation(Long tableId, LocalDateTime startTime, LocalDateTime endTime) {
-        return reservationRepository.existsOverlappingReservation(tableId, startTime, endTime);
+        // Convert startTime and endTime to UTC
+
+
+        log.info("Checking overlap for Table ID: {}", tableId);
+        log.info("Start Time: {}", startTime);
+        log.info("End Time: {}", endTime);
+
+        // Compare using UTC values
+        long count = reservationRepository.countOverlappingReservation(tableId, startTime, endTime);
+        return count > 0;
     }
 
     @Override
@@ -75,6 +97,17 @@ public class ReservationDatabaseImpl implements ReservationDatabase {
     @Override
     public List<Reservation> findByCompanyAndStatus(Company company, ReservationStatus status) {
         return reservationRepository.findByCompanyAndStatus(company, status);
+    }
+    @Override
+    public List<Reservation> findByDiningTableAndReservationDateBetween(
+            DiningTable diningTable,
+            LocalDateTime startDate,
+            LocalDateTime endDate) {
+        return reservationRepository.findByDiningTableAndReservationDateBetween(
+                diningTable,
+                startDate,
+                endDate
+        );
     }
 
 }

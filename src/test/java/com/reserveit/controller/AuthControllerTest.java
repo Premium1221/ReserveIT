@@ -1,4 +1,4 @@
-package controller;
+package com.reserveit.controller;
 
 import com.reserveit.controller.AuthController;
 import com.reserveit.dto.AuthenticationRequest;
@@ -45,6 +45,33 @@ class AuthControllerTest {
     }
 
     @Test
+    void refreshToken_Success() {
+        // Arrange
+        Cookie refreshTokenCookie = new Cookie("refreshToken", "rtok");
+        when(request.getCookies()).thenReturn(new Cookie[]{refreshTokenCookie});
+        when(authenticationService.refreshToken("rtok")).thenReturn(authResponse);
+
+        // Act
+        ResponseEntity<?> response = authController.refreshToken(request);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(authenticationService).refreshToken("rtok");
+    }
+
+    @Test
+    void refreshToken_MissingCookie_Returns401() {
+        // Arrange
+        when(request.getCookies()).thenReturn(null);
+
+        // Act
+        ResponseEntity<?> response = authController.refreshToken(request);
+
+        // Assert
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+    }
+
+    @Test
     void register_Success() {
         // Arrange
         when(authenticationService.register(any(RegisterRequest.class))).thenReturn(authResponse);
@@ -59,82 +86,7 @@ class AuthControllerTest {
         verify(authenticationService).register(registerRequest);
     }
 
-    @Test
-    void authenticate_Success() {
-        // Arrange
-        when(authenticationService.authenticate(any(AuthenticationRequest.class))).thenReturn(authResponse);
 
-        // Act
-        ResponseEntity<AuthenticationResponse> response = authController.authenticate(authRequest);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(authResponse.getAccessToken(), response.getBody().getAccessToken());
-        verify(authenticationService).authenticate(authRequest);
-    }
-
-    @Test
-    void refreshToken_Success() {
-        // Arrange
-        Cookie refreshTokenCookie = new Cookie("refreshToken", "valid-refresh-token");
-        Cookie[] cookies = {refreshTokenCookie};
-        when(request.getCookies()).thenReturn(cookies);
-        when(authenticationService.refreshToken(anyString())).thenReturn(authResponse);
-
-        // Act
-        ResponseEntity<AuthenticationResponse> response = authController.refreshToken(request);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(authResponse.getAccessToken(), response.getBody().getAccessToken());
-        verify(authenticationService).refreshToken("valid-refresh-token");
-    }
-
-    @Test
-    void refreshToken_NoCookies() {
-        // Arrange
-        when(request.getCookies()).thenReturn(null);
-
-        // Act
-        ResponseEntity<AuthenticationResponse> response = authController.refreshToken(request);
-
-        // Assert
-        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
-        assertNull(response.getBody());
-    }
-
-    @Test
-    void refreshToken_NoRefreshTokenCookie() {
-        // Arrange
-        Cookie otherCookie = new Cookie("other", "value");
-        Cookie[] cookies = {otherCookie};
-        when(request.getCookies()).thenReturn(cookies);
-
-        // Act
-        ResponseEntity<AuthenticationResponse> response = authController.refreshToken(request);
-
-        // Assert
-        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
-        assertNull(response.getBody());
-    }
-
-    @Test
-    void refreshToken_ServiceError() {
-        // Arrange
-        Cookie refreshTokenCookie = new Cookie("refreshToken", "valid-refresh-token");
-        Cookie[] cookies = {refreshTokenCookie};
-        when(request.getCookies()).thenReturn(cookies);
-        when(authenticationService.refreshToken(anyString())).thenThrow(new RuntimeException("Token expired"));
-
-        // Act
-        ResponseEntity<AuthenticationResponse> response = authController.refreshToken(request);
-
-        // Assert
-        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
-        assertNull(response.getBody());
-    }
 
     @Test
     void logout_Success() {

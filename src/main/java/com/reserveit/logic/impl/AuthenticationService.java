@@ -10,17 +10,18 @@ import com.reserveit.model.RefreshToken;
 import com.reserveit.model.Staff;
 import com.reserveit.model.User;
 import com.reserveit.util.JwtUtil;
-import com.reserveit.util.PasswordGenerator;
 import com.reserveit.util.PasswordHasher;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -41,6 +42,8 @@ public class AuthenticationService {
         if (user == null) {
             throw new UsernameNotFoundException("User not found");
         }
+        log.info("User attempting login: {}", user.getEmail());
+        log.info("User role: {}", user.getUserRole());
 
         if (!passwordEncoder.matches(request.getPassword(), user.getHashedPassword())) {
             throw new BadCredentialsException("Invalid password");
@@ -87,27 +90,34 @@ public class AuthenticationService {
 
     public AuthenticationResponse refreshToken(String refreshTokenStr) {
         if (refreshTokenStr == null || refreshTokenStr.isEmpty()) {
-            clearRefreshTokenCookie();
+            clearAllAuthCookies();
             throw new RuntimeException("No refresh token provided");
         }
 
-        RefreshToken refreshToken = refreshTokenService.findByToken(refreshTokenStr)
-                .orElseThrow(() -> new RuntimeException("Refresh token not found"));
+        try {
+            RefreshToken refreshToken = refreshTokenService.findByToken(refreshTokenStr)
+                    .orElseThrow(() -> {
+                        clearAllAuthCookies();
+                        return new RuntimeException("Refresh token not found");
+                    });
 
-        refreshToken = refreshTokenService.verifyExpiration(refreshToken);
-        User user = refreshToken.getUser();
+            refreshToken = refreshTokenService.verifyExpiration(refreshToken);
+            User user = refreshToken.getUser();
 
-        String accessToken = jwtUtil.generateAccessToken(user);
+            String accessToken = jwtUtil.generateAccessToken(user);
+            RefreshToken newRefreshToken = refreshTokenService.createRefreshToken(user);
+            setRefreshTokenCookie(newRefreshToken.getToken());
 
-        RefreshToken newRefreshToken = refreshTokenService.createRefreshToken(user);
-        setRefreshTokenCookie(newRefreshToken.getToken());
+            String companyId = null;
+            if (user instanceof Staff staff ) {
+                companyId = staff.getCompany().getId().toString();
+            }
 
-        String companyId = null;
-        if (user instanceof Staff) {
-            Staff staff = (Staff) user;
-            companyId = staff.getCompany().getId().toString();
+            return new AuthenticationResponse(accessToken, user.getUserRole().toString(), companyId);
+        } catch (Exception e) {
+            clearAllAuthCookies();
+            throw e;
         }
-        return new AuthenticationResponse(accessToken, user.getUserRole().toString(), companyId);
     }
 
 
@@ -122,21 +132,13 @@ public class AuthenticationService {
     private void setRefreshTokenCookie(String token) {
         Cookie cookie = new Cookie("refreshToken", token);
         cookie.setHttpOnly(true);
-        cookie.setSecure(false);
+        cookie.setSecure(true);
         cookie.setPath("/");
         cookie.setMaxAge((int) (refreshTokenDuration / 1000));
         response.addCookie(cookie);
     }
 
 
-    private void clearRefreshTokenCookie() {
-        Cookie cookie = new Cookie("refreshToken", "");
-        cookie.setHttpOnly(true);
-        cookie.setSecure(false); // Set true in production
-        cookie.setPath("/");
-        cookie.setMaxAge(0);
-        response.addCookie(cookie);
-    }
 
 
     private void clearAllAuthCookies() {

@@ -1,4 +1,4 @@
-package controller;
+package com.reserveit.controller;
 
 import com.reserveit.controller.UserController;
 import com.reserveit.dto.UserDto;

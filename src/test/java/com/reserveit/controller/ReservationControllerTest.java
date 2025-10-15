@@ -1,4 +1,4 @@
-package controller;
+package com.reserveit.controller;
 
 import com.reserveit.controller.ReservationController;
 import com.reserveit.dto.ReservationDto;
@@ -140,5 +140,162 @@ class ReservationControllerTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals(2, response.getBody().size());
+    }
+    @Test
+    void getReservationById_Success() {
+        // Arrange
+        Long reservationId = 1L;
+        ReservationDto expectedDto = createSampleReservationDto();
+        when(reservationService.getReservationById(eq(reservationId), any(User.class)))
+                .thenReturn(expectedDto);
+
+        // Act
+        ResponseEntity<ReservationDto> response = reservationController.getReservationById(reservationId);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(expectedDto, response.getBody());
+        verify(reservationService).getReservationById(eq(reservationId), any(User.class));
+    }
+
+    @Test
+    void getReservationById_NotFound() {
+        // Arrange
+        Long reservationId = 1L;
+        when(reservationService.getReservationById(eq(reservationId), any(User.class)))
+                .thenThrow(new IllegalArgumentException("Reservation not found"));
+
+        // Act
+        ResponseEntity<ReservationDto> response = reservationController.getReservationById(reservationId);
+
+        // Assert
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertNull(response.getBody());
+    }
+
+    @Test
+    void updateReservation_Success() {
+        // Arrange
+        Long reservationId = 1L;
+        ReservationDto updateDto = createSampleReservationDto();
+        ReservationDto updatedDto = createSampleReservationDto();
+        when(reservationService.updateReservation(eq(reservationId), any(ReservationDto.class), any(User.class)))
+                .thenReturn(updatedDto);
+
+        // Act
+        ResponseEntity<ReservationDto> response = reservationController.updateReservation(reservationId, updateDto);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(updatedDto, response.getBody());
+        verify(reservationService).updateReservation(eq(reservationId), any(ReservationDto.class), any(User.class));
+    }
+
+    @Test
+    void updateReservation_Error() {
+        // Arrange
+        Long reservationId = 1L;
+        ReservationDto updateDto = createSampleReservationDto();
+        when(reservationService.updateReservation(eq(reservationId), any(ReservationDto.class), any(User.class)))
+                .thenThrow(new IllegalArgumentException("Invalid update"));
+
+        // Act
+        ResponseEntity<ReservationDto> response = reservationController.updateReservation(reservationId, updateDto);
+
+        // Assert
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertNull(response.getBody());
+    }
+
+    @Test
+    void createQuickReservation_Success() {
+        // Arrange
+        ReservationDto inputDto = createSampleReservationDto();
+        ReservationDto savedDto = createSampleReservationDto();
+        savedDto.setId(1L);
+        when(reservationService.createQuickReservation(any(ReservationDto.class), anyBoolean(), any(User.class)))
+                .thenReturn(savedDto);
+
+        // Act
+        ResponseEntity<?> response = reservationController.createQuickReservation(inputDto, false);
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        // Body should be a ReservationDto
+        ReservationDto body = (ReservationDto) response.getBody();
+        assertEquals(savedDto.getId(), body.getId());
+        verify(webSocketService).notifyReservationUpdate(savedDto);
+        verify(webSocketService).notifyTableUpdate(savedDto.getTableId());
+    }
+
+    @Test
+    void createQuickReservation_Error() {
+        // Arrange
+        ReservationDto inputDto = createSampleReservationDto();
+        when(reservationService.createQuickReservation(any(ReservationDto.class), anyBoolean(), any(User.class)))
+                .thenThrow(new IllegalArgumentException("Invalid reservation"));
+
+        // Act
+        ResponseEntity<?> response = reservationController.createQuickReservation(inputDto, false);
+
+        // Assert
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertNotNull(response.getBody());
+        @SuppressWarnings("unchecked")
+        java.util.Map<String, Object> error = (java.util.Map<String, Object>) response.getBody();
+        assertEquals("Invalid reservation", error.get("message"));
+    }
+
+    @Test
+    void deleteAllReservations_Success() {
+        // Arrange
+        doNothing().when(reservationService).deleteAllReservations();
+
+        // Act
+        ResponseEntity<String> response = reservationController.deleteAllReservations();
+
+        // Assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals("All reservations have been deleted successfully", response.getBody());
+        verify(reservationService).deleteAllReservations();
+    }
+
+    @Test
+    void deleteAllReservations_Error() {
+        // Arrange
+        doThrow(new RuntimeException("Database error"))
+                .when(reservationService).deleteAllReservations();
+
+        // Act
+        ResponseEntity<String> response = reservationController.deleteAllReservations();
+
+        // Assert
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        assertTrue(response.getBody().contains("Failed to delete reservations"));
+    }
+
+
+    private User createTestUser() {
+        User user = new User();
+        user.setId(UUID.randomUUID());
+        user.setEmail("test@example.com");
+        user.setFirstName("Test");
+        user.setLastName("User");
+        return user;
+    }
+
+    private ReservationDto createSampleReservationDto() {
+        ReservationDto dto = new ReservationDto();
+        dto.setId(1L);
+        dto.setUserId(UUID.randomUUID());
+        dto.setTableId(1L);
+        dto.setCompanyId(UUID.randomUUID());
+        dto.setReservationDate(LocalDateTime.now().plusHours(1).toString());
+        dto.setNumberOfPeople(2);
+        dto.setStatus(ReservationStatus.CONFIRMED);
+        return dto;
     }
 }

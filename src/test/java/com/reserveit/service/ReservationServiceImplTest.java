@@ -1,4 +1,4 @@
-package service;
+package com.reserveit.service;
 
 import com.reserveit.database.interfaces.CompanyDatabase;
 import com.reserveit.database.interfaces.DiningTableDatabase;
@@ -284,6 +284,8 @@ class ReservationServiceImplTest {
             // Assert
             assertNotNull(result);
             assertEquals(reservation.getId(), result.getId());
+            // Ensure DTO contains company name for UI display
+            assertEquals("Test Restaurant", result.getCompanyName());
         }
         @Test
         void getReservationsByTimeRange_Success() {
@@ -626,6 +628,52 @@ class ReservationServiceImplTest {
                     () -> reservationService.checkInReservation(1L));
         }
     }
+    @Test
+    void getUpcomingReservations_CompanyNotFound_ThrowsException() {
+        // Arrange
+        UUID companyId = UUID.randomUUID();
+        when(companyDb.findById(companyId)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        Exception exception = assertThrows(IllegalArgumentException.class,
+                () -> reservationService.getUpcomingReservations(companyId));
+        assertEquals("Company ID not found" + companyId, exception.getMessage());
+    }
+
+    @Test
+    void checkInReservation_NoDiningTable_ThrowsException() {
+        // Arrange
+        testReservation.setDiningTable(null);
+        when(reservationDb.findById(anyLong())).thenReturn(Optional.of(testReservation));
+
+        // Act & Assert
+        Exception exception = assertThrows(IllegalStateException.class,
+                () -> reservationService.checkInReservation(1L));
+        assertEquals("Cannot check in reservation without an assigned table", exception.getMessage());
+    }
+
+
+
+    @Test
+    void getUpcomingReservations_NoReservationsFound_ReturnsEmptyList() {
+        // Arrange
+        UUID companyId = testCompany.getId();
+        when(companyDb.findById(companyId)).thenReturn(Optional.of(testCompany));
+        when(reservationDb.findByCompanyAndReservationDateAfterAndStatusNot(
+                eq(testCompany),
+                any(LocalDateTime.class),
+                eq(ReservationStatus.CANCELLED)))
+                .thenReturn(Collections.emptyList());
+
+        // Act
+        List<ReservationDto> result = reservationService.getUpcomingReservations(companyId);
+
+        // Assert
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+        verify(reservationDb).findByCompanyAndReservationDateAfterAndStatusNot(any(), any(), any());
+    }
+
 
     // Helper methods
     private User createTestUser() {

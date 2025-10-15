@@ -5,5 +5,9 @@ public enum TableStatus {
     OCCUPIED,
     RESERVED,
     OUT_OF_SERVICE,
-    CLEANING
+    CLEANING;
+
+    public String getStatus() {
+        return this.name();
+    }
 }

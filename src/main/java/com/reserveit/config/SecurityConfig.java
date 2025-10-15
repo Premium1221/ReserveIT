@@ -1,17 +1,14 @@
 package com.reserveit.config;
 
 import com.reserveit.util.JwtAuthFilter;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -20,11 +17,17 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
 
+@Slf4j
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
     private final JwtAuthFilter jwtAuthFilter;
+
+    private static final String ROLE_ADMIN = "ADMIN";
+    private static final String ROLE_MANAGER = "MANAGER";
+    private static final String ROLE_CUSTOMER = "CUSTOMER";
+    private static final String ROLE_STAFF = "STAFF";
 
     private static final String[] PUBLIC_ENDPOINTS = {
             "/api/auth/**",
@@ -41,7 +44,7 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        System.out.println("Configuring security filter chain");
+        log.info("Configuring security filter chain");
 
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
@@ -51,14 +54,18 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
+                        .requestMatchers("/api/auth/refresh").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/companies/**").permitAll()
-                        .requestMatchers("/api/tables/restaurant/**").hasAnyRole("CUSTOMER", "MANAGER", "ADMIN")
-                        .requestMatchers("/api/tables/company/**").hasRole("MANAGER")
-                        .requestMatchers("/api/tables/**").hasAnyRole("MANAGER", "ADMIN")
-                        .requestMatchers("/api/companies/{id}/dashboard").hasRole("MANAGER")
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/management/**").hasAnyRole("MANAGER", "ADMIN")
-                        .requestMatchers("/api/staff/**").hasAnyRole("STAFF", "MANAGER", "ADMIN")
+                        .requestMatchers("/api/tables/suggestions/**").permitAll()
+                        .requestMatchers("/api/tables/restaurant/**").permitAll()
+                        .requestMatchers("/api/tables/company/**").hasRole(ROLE_MANAGER)
+                        .requestMatchers("/api/tables/**").hasAnyRole(ROLE_MANAGER, ROLE_ADMIN, ROLE_CUSTOMER)
+                        .requestMatchers("/api/companies/{id}/dashboard").hasRole(ROLE_MANAGER)
+                        .requestMatchers("/api/admin/**").hasRole(ROLE_ADMIN)
+                        .requestMatchers("/api/management/**").hasAnyRole(ROLE_MANAGER, ROLE_ADMIN)
+                        .requestMatchers("/api/staff/**").hasAnyRole(ROLE_STAFF, ROLE_MANAGER, ROLE_ADMIN)
+                        .requestMatchers("/api/reservations/**").hasAnyRole(ROLE_CUSTOMER, ROLE_STAFF, ROLE_MANAGER, ROLE_ADMIN)
+                        .requestMatchers("api/reservations/all").hasAnyRole(ROLE_ADMIN)
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
@@ -69,33 +76,18 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5200"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList(
-                "Authorization",
-                "Content-Type",
-                "Accept",
-                "X-Requested-With",
-                "Access-Control-Allow-Origin",
-                "Access-Control-Allow-Methods"
+        configuration.setAllowedOrigins(Arrays.asList(
+                "http://localhost:5200",
+                "http://127.0.0.1:5200",
+                "http://172.29.96.1:5200"
         ));
-        configuration.setExposedHeaders(Arrays.asList("Set-Cookie"));
-        configuration.setAllowCredentials(true);
-        configuration.setMaxAge(3600L);
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setExposedHeaders(Arrays.asList("Authorization"));
+        configuration.setAllowCredentials(Boolean.valueOf(true));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
-    }
-
-    @Bean
-    public AuthenticationManager authenticationManager(
-            AuthenticationConfiguration config) throws Exception {
-        return config.getAuthenticationManager();
-    }
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(12);
     }
 }

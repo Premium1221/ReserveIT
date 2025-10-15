@@ -1,6 +1,5 @@
 package com.reserveit.repository;
 
-import com.reserveit.enums.TableShape;
 import com.reserveit.enums.TableStatus;
 import com.reserveit.model.DiningTable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -63,11 +62,11 @@ public interface DiningTableRepository extends JpaRepository<DiningTable, Long> 
             @Param("yPosition") int yPosition
     );
 
-    @Query("SELECT COUNT(t) > 0 FROM DiningTable t " +
+    @Query("SELECT CASE WHEN COUNT(t) > 0 THEN true ELSE false END FROM DiningTable t " +
             "WHERE t.company.id = :companyId " +
             "AND t.xPosition = :xPosition " +
             "AND t.yPosition = :yPosition " +
-            "AND t.id != :excludeTableId")
+            "AND t.id <> :excludeTableId")
     boolean existsByCompanyIdAndXPositionAndYPositionAndIdNot(
             @Param("companyId") UUID companyId,
             @Param("xPosition") int xPosition,
@@ -91,26 +90,7 @@ public interface DiningTableRepository extends JpaRepository<DiningTable, Long> 
             @Param("status") TableStatus status
     );
 
-    @Modifying
-    @Transactional
-    @Query("UPDATE DiningTable t SET " +
-            "t.tableNumber = :tableNumber, " +
-            "t.capacity = :capacity, " +
-            "t.shape = :shape, " +
-            "t.status = :status, " +
-            "t.outdoor = :isOutdoor, " +
-            "t.floorLevel = :floorLevel " +
-            "WHERE t.id = :id AND t.company.id = :companyId")
-    int updateTableProperties(
-            @Param("id") Long id,
-            @Param("companyId") UUID companyId,
-            @Param("tableNumber") String tableNumber,
-            @Param("capacity") int capacity,
-            @Param("shape") TableShape shape,
-            @Param("status") TableStatus status,
-            @Param("isOutdoor") boolean isOutdoor,
-            @Param("floorLevel") int floorLevel
-    );
+
 
     @Modifying
     @Transactional

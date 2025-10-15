@@ -1,4 +1,4 @@
-package service;
+package com.reserveit.service;
 
 import com.reserveit.database.interfaces.RefreshTokenDatabase;
 import com.reserveit.logic.impl.RefreshTokenServiceImpl;

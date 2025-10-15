@@ -2,9 +2,7 @@ package com.reserveit.controller;
 
 import com.reserveit.dto.RegisterRequest;
 import com.reserveit.dto.UserDto;
-import com.reserveit.logic.impl.AuthenticationService;
 import com.reserveit.logic.interfaces.AdminService;
-import com.reserveit.logic.interfaces.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -16,7 +14,10 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/admin")
 @PreAuthorize("hasRole('ADMIN')")
-@CrossOrigin(origins = { "http://localhost:5200"}, allowCredentials = "true")
+@CrossOrigin(
+        origins = {"http://localhost:5200", "http://127.0.0.1:5200", "http://172.29.96.1:5200"},
+        allowCredentials = "true"
+)
 public class AdminController {
     private final AdminService adminService;
 
@@ -25,14 +26,14 @@ public class AdminController {
     }
 
     @PostMapping("/users")
-    public ResponseEntity<?> createUser(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<String> createUser(@Valid @RequestBody RegisterRequest request) {
         try {
             if ((request.getRole().equalsIgnoreCase("MANAGER") || request.getRole().equalsIgnoreCase("STAFF")) &&
                     request.getCompanyId() == null) {
                 return ResponseEntity.badRequest().body("companyId is required for MANAGER and STAFF roles");
             }
             adminService.createUser(request);
-            return ResponseEntity.ok().body("User created successfully");
+            return ResponseEntity.ok("User created successfully");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -44,10 +45,10 @@ public class AdminController {
     }
 
     @DeleteMapping("/users/{id}")
-    public ResponseEntity<?> deleteUser(@PathVariable String id) {
+    public ResponseEntity<String> deleteUser(@PathVariable String id) {
         try {
             adminService.deleteUser(UUID.fromString(id));
-            return ResponseEntity.ok().body("User deleted successfully");
+            return ResponseEntity.ok("User deleted successfully");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Failed to delete user: " + e.getMessage());
         }

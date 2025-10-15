@@ -1,13 +1,15 @@
-package service;
+package com.reserveit.service;
 
 import com.reserveit.database.interfaces.CompanyDatabase;
 import com.reserveit.database.interfaces.DiningTableDatabase;
 import com.reserveit.dto.TablePositionDto;
+import com.reserveit.enums.ReservationStatus;
 import com.reserveit.enums.TableShape;
 import com.reserveit.enums.TableStatus;
 import com.reserveit.logic.impl.DiningTableServiceImpl;
 import com.reserveit.model.Company;
 import com.reserveit.model.DiningTable;
+import com.reserveit.model.Reservation;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -16,6 +18,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -293,7 +296,92 @@ class DiningTableServiceImplTest {
             assertEquals(TableStatus.OCCUPIED, existingTable.getStatus());
             verify(tableDb).save(existingTable);
         }
+        @Test
+        void updateTableStatus_WithActiveReservation() {
+            // Arrange
+            Long tableId = 1L;
+            DiningTable table = createSampleTable();
+            Reservation reservation = new Reservation();
+            reservation.setStatus(ReservationStatus.CONFIRMED);
+            reservation.setReservationDate(LocalDateTime.now().minusMinutes(30));
+            reservation.setEndTime(LocalDateTime.now().plusMinutes(30));
+            table.getReservations().add(reservation);
+
+            when(tableDb.findById(tableId)).thenReturn(Optional.of(table));
+            when(tableDb.save(any(DiningTable.class))).thenReturn(table);
+
+            // Act
+            diningTableService.updateTableStatus(tableId);
+
+            // Assert
+            assertEquals(TableStatus.RESERVED, table.getStatus());
+            verify(tableDb).save(table);
+        }
+
+        @Test
+        void updateTableStatus_WithNoActiveReservation() {
+            // Arrange
+            Long tableId = 1L;
+            DiningTable table = createSampleTable();
+            Reservation oldReservation = new Reservation();
+            oldReservation.setStatus(ReservationStatus.COMPLETED);
+            oldReservation.setReservationDate(LocalDateTime.now().minusHours(2));
+            oldReservation.setEndTime(LocalDateTime.now().minusHours(1));
+            table.getReservations().add(oldReservation);
+
+            when(tableDb.findById(tableId)).thenReturn(Optional.of(table));
+            when(tableDb.save(any(DiningTable.class))).thenReturn(table);
+
+            // Act
+            diningTableService.updateTableStatus(tableId);
+
+            // Assert
+            assertEquals(TableStatus.AVAILABLE, table.getStatus());
+            verify(tableDb).save(table);
+        }
+
+        @Test
+        void updateTablePositions_ValidPositions() {
+            // Arrange
+            List<TablePositionDto> positions = Arrays.asList(
+                    createSampleTableDto(),
+                    createModifiedSampleTableDto()
+            );
+
+            List<DiningTable> existingTables = Arrays.asList(
+                    createSampleTable(),
+                    createModifiedSampleTable()
+            );
+
+            when(tableDb.findByIdsAndCompanyId(anyList(), eq(SAMPLE_COMPANY_ID)))
+                    .thenReturn(existingTables);
+            when(tableDb.saveAll(anyList())).thenReturn(existingTables);
+
+            // Act
+            diningTableService.updateTablePositions(SAMPLE_COMPANY_ID, positions);
+
+            // Assert
+            verify(tableDb).saveAll(anyList());
+            verify(tableDb).findByIdsAndCompanyId(anyList(), eq(SAMPLE_COMPANY_ID));
+        }
+
+        @Test
+        void updateTablePositions_TablesMismatch() {
+            // Arrange
+            List<TablePositionDto> positions = Arrays.asList(
+                    createSampleTableDto(),
+                    createModifiedSampleTableDto()
+            );
+            List<DiningTable> existingTables = Collections.singletonList(createSampleTable());
+
+            // Act & Assert
+            assertThrows(IllegalArgumentException.class, () ->
+                    diningTableService.updateTablePositions(SAMPLE_COMPANY_ID, positions)
+            );
+        }
+
     }
+
 
     @Nested
     class DeleteTableTests {
@@ -322,6 +410,8 @@ class DiningTableServiceImplTest {
                     () -> diningTableService.deleteTable(tableId));
         }
     }
+
+
 
     @Nested
     class TableStatusTests {
@@ -352,6 +442,7 @@ class DiningTableServiceImplTest {
         }
     }
 
+
     // Helper methods
     private TablePositionDto createSampleTableDto() {
         TablePositionDto dto = new TablePositionDto();
@@ -361,6 +452,8 @@ class DiningTableServiceImplTest {
         dto.setXPosition(100);
         dto.setYPosition(100);
         dto.setCompanyId(SAMPLE_COMPANY_ID);
+        dto.setStatus(TableStatus.AVAILABLE);
+        dto.setShape(TableShape.RECTANGLE);
         return dto;
     }
 
@@ -372,6 +465,7 @@ class DiningTableServiceImplTest {
         table.setXPosition(100);
         table.setYPosition(100);
         table.setStatus(TableStatus.AVAILABLE);
+        table.setShape(TableShape.RECTANGLE);
         return table;
     }
 
@@ -380,5 +474,24 @@ class DiningTableServiceImplTest {
         company.setId(SAMPLE_COMPANY_ID);
         company.setName("Test Company");
         return company;
+    }
+    private DiningTable createModifiedSampleTable() {
+        DiningTable table = createSampleTable();
+        table.setId(2L);
+        table.setTableNumber("T2");
+        return table;
+    }
+
+    private TablePositionDto createModifiedSampleTableDto() {
+        TablePositionDto dto = createSampleTableDto();
+        dto.setId(2L);
+        dto.setStatus(TableStatus.AVAILABLE);
+        dto.setTableNumber("T2");
+        dto.setCapacity(4);
+        dto.setXPosition(100);
+        dto.setYPosition(100);
+        dto.setCompanyId(SAMPLE_COMPANY_ID);
+        dto.setShape(TableShape.RECTANGLE);
+        return dto;
     }
 }

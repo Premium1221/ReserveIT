@@ -8,12 +8,19 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
-@CrossOrigin(origins = {"http://localhost:5200"}, allowCredentials = "true")
+@CrossOrigin(
+        origins = {"http://localhost:5200", "http://127.0.0.1:5200", "http://172.29.96.1:5200"},
+        allowCredentials = "true"
+)
 public class AuthController {
     private final AuthenticationService authenticationService;
 
@@ -23,23 +30,30 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthenticationResponse> authenticate(@RequestBody AuthenticationRequest request) {
-        return ResponseEntity.ok(authenticationService.authenticate(request));
+    public ResponseEntity<?> authenticate(@RequestBody AuthenticationRequest request) {
+        try {
+            AuthenticationResponse response = authenticationService.authenticate(request);
+            return ResponseEntity.ok(response);
+        } catch (UsernameNotFoundException | BadCredentialsException e) {
+            return ResponseEntity.status(401).body(Map.of("message", "Invalid email or password"));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("message", "An unexpected error occurred"));
+        }
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<AuthenticationResponse> refreshToken(HttpServletRequest request) {
+    public ResponseEntity<?> refreshToken(HttpServletRequest request) {
         String refreshToken = extractRefreshTokenFromCookie(request);
 
-        if (refreshToken == null) {
-            return ResponseEntity.status(401).build();
+        if (refreshToken == null || refreshToken.isEmpty()) {
+            return ResponseEntity.status(401).body(Map.of("message", "Refresh token is missing"));
         }
 
         try {
             AuthenticationResponse response = authenticationService.refreshToken(refreshToken);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return ResponseEntity.status(401).build();
+            return ResponseEntity.status(401).body(Map.of("message", "Invalid or expired refresh token"));
         }
     }
 

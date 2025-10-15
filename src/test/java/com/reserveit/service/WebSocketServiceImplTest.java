@@ -1,4 +1,4 @@
-package service;
+package com.reserveit.service;
 
 import com.reserveit.dto.ReservationDto;
 import com.reserveit.dto.TablePositionDto;

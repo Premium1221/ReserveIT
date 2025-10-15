@@ -1,4 +1,4 @@
-package controller;
+package com.reserveit.controller;
 
 import com.reserveit.controller.StaffReservationController;
 import com.reserveit.dto.ReservationDto;

@@ -5,6 +5,7 @@ import com.reserveit.model.Staff;
 import com.reserveit.model.User;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Component;
 import java.security.Key;
 import java.util.*;
 
+@Slf4j
 @Component
 public class JwtUtil {
     @Value("${jwt.secret}")
@@ -36,7 +38,7 @@ public class JwtUtil {
 
         if (user instanceof Staff staff) {
             UUID companyId = staff.getCompany().getId();
-            System.out.println("Adding company ID to token: " + companyId);
+            log.info("Adding company ID to token: {}", companyId);
             claims.put("companyId", companyId.toString());
         }
 
@@ -71,10 +73,10 @@ public class JwtUtil {
             Claims claims = extractAllClaims(token);
             boolean valid = claims.getSubject().equals(userDetails.getEmail()) &&
                     !isTokenExpired(claims.getExpiration());
-            System.out.println("Token validation result for user " + userDetails.getEmail() + ": " + valid);
+            log.info("Token validation result for user {}: {}", userDetails.getEmail(), valid);
             return valid;
         } catch (Exception e) {
-            System.err.println("Token validation failed: " + e.getMessage());
+            log.error("Token validation failed: {}", e.getMessage());
             return false;
         }
     }

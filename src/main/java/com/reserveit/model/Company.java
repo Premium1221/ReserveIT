@@ -20,7 +20,7 @@ public class Company {
 
     private String address;
 
-    @Pattern(regexp = "^[0-9]{10}$", message = "Phone number must be 10 digits")
+    @Pattern(regexp = "^\\d{10}$", message = "Phone number must be 10 digits")
     private String phone;
 
     @Email(message = "Invalid email format")
@@ -33,7 +33,7 @@ public class Company {
 
     private String pictureUrl;
 
-    @ManyToMany(fetch = FetchType.EAGER)  // Change to EAGER loading for categories
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "company_categories",
             joinColumns = @JoinColumn(name = "company_id"),
@@ -41,13 +41,20 @@ public class Company {
     )
     private Set<Category> categories = new HashSet<>();
 
-    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JsonIgnore  // Ignore tables in JSON serialization
+    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private Set<DiningTable> tables = new HashSet<>();
 
-    // Constructors
-    public Company() {
-    }
+    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private Set<Staff> staff = new HashSet<>();
+
+    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private Set<Reservation> reservations = new HashSet<>();
+
+
+
 
     // Getters and Setters
     public UUID getId() {

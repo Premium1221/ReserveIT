@@ -8,9 +8,9 @@ stages:
 # Build the application
 build:
   stage: build
-  image: gradle:7.4-jdk17
+  image: gradle:8.8-jdk17
   script:
-    - gradle build
+    - ./gradlew clean assemble --no-daemon
   artifacts:
     paths:
       - build/libs/*.jar
@@ -18,20 +18,42 @@ build:
 # Run tests
 test:
   stage: test
-  image: gradle:7.4-jdk17
+  image: gradle:8.8-jdk17
   script:
-    - gradle test
+    - ./gradlew test jacocoTestReport --no-daemon \
+        -Dspring.profiles.active=test \
+        -Dspring.datasource.url="jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;MODE=MySQL;DATABASE_TO_UPPER=false" \
+        -Dspring.datasource.driver-class-name=org.h2.Driver \
+        -Dspring.jpa.database-platform=org.hibernate.dialect.H2Dialect \
+        -Dspring.jpa.hibernate.ddl-auto=update
 
 # Run SonarQube analysis
 sonar:
   stage: sonar
-  image: gradle:7.4-jdk17
+  image: gradle:8.8-jdk17
+  variables:
+    SONAR_HOST_URL: $SONAR_HOST_URL
+    SONAR_TOKEN: $SONAR_TOKEN
   script:
-    - gradle sonarqube --stacktrace --info
+    - ./gradlew sonar --no-daemon -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.token=$SONAR_TOKEN
 
 
 # Build Docker image
 docker:
   stage: docker
+  image: docker:24
+  services:
+    - docker:24-dind
+  variables:
+    DOCKER_DRIVER: overlay2
   script:
-    - docker build -t reserveit-app .
+    - |
+      if [ -n "$DOCKER_USER" ] && [ -n "$DOCKER_PASS" ] && [ -n "$CI_REGISTRY" ] && [ -n "$CI_IMAGE" ]; then \
+        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" "$CI_REGISTRY" --password-stdin ; \
+        docker build -t "$CI_IMAGE:$CI_COMMIT_SHA" . ; \
+        docker tag "$CI_IMAGE:$CI_COMMIT_SHA" "$CI_IMAGE:latest" ; \
+        docker push "$CI_IMAGE:$CI_COMMIT_SHA" ; \
+        docker push "$CI_IMAGE:latest" ; \
+      else \
+        echo "Skipping push; registry creds or image not configured." ; \
+      fi

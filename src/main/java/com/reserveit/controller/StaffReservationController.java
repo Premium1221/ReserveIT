@@ -2,14 +2,18 @@ package com.reserveit.controller;
 
 import com.reserveit.dto.ReservationDto;
 import com.reserveit.enums.ReservationStatus;
-import com.reserveit.logic.impl.WebSocketService;
+import com.reserveit.logic.impl.WebSocketServiceImpl;
 import com.reserveit.logic.interfaces.ReservationService;
+import com.reserveit.logic.interfaces.WebSocketService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -20,32 +24,63 @@ public class StaffReservationController {
     private final WebSocketService webSocketService;
 
     public StaffReservationController(ReservationService reservationService,
-                                      WebSocketService webSocketService) {
+                                      WebSocketServiceImpl webSocketService) {
         this.reservationService = reservationService;
         this.webSocketService = webSocketService;
     }
 
     @PostMapping("/{id}/check-in")
-    public ResponseEntity<?> checkInReservation(@PathVariable Long id) {
+    @PreAuthorize("hasAnyRole('STAFF', 'MANAGER')")  // Add this annotation
+    public ResponseEntity<Object> checkInReservation(@PathVariable Long id) {
         try {
-            reservationService.checkInReservation(id);
-            // Notify clients through WebSocket about table status change
-            webSocketService.notifyTableUpdate(id);
-            return ResponseEntity.ok().build();
-        } catch (Exception e) {
+            // Validate input
+            if (id == null) {
+                return ResponseEntity.badRequest().body("Reservation ID is required");
+            }
+
+            // Call service method
+            ReservationDto dto = reservationService.checkInReservation(id);
+
+            // Only notify if check-in was successful
+            if (dto != null && dto.getTableId() != null) {
+                webSocketService.notifyTableUpdate(dto.getTableId());
+            }
+
+            return ResponseEntity.ok(dto);
+
+        } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Check-in failed: " + e.getMessage());
         }
     }
 
+
+
     @PostMapping("/{id}/check-out")
-    public ResponseEntity<?> checkOutReservation(@PathVariable Long id) {
+    public ResponseEntity<Object> checkOutReservation(@PathVariable Long id) {
         try {
-            reservationService.checkOutReservation(id);
-            // Notify clients through WebSocket about table status change
-            webSocketService.notifyTableUpdate(id);
-            return ResponseEntity.ok().build();
-        } catch (Exception e) {
+            ReservationDto dto = reservationService.checkOutReservation(id);
+
+            // Send WebSocket notification about table update
+            if (dto.getTableId() != null) {
+                webSocketService.notifyTableUpdate(dto.getTableId());
+
+                // Also send a general update notification
+                Map<String, Object> notification = new HashMap<>();
+                notification.put("type", "TABLE_STATUS_CHANGED");
+                notification.put("tableId", dto.getTableId());
+                notification.put("status", "AVAILABLE");
+                webSocketService.sendStaffNotification(dto.getCompanyId(), notification);
+            }
+
+            return ResponseEntity.ok(dto);
+        } catch (IllegalArgumentException | IllegalStateException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to check out: " + e.getMessage());
         }
     }
 
@@ -73,4 +108,53 @@ public class StaffReservationController {
             return ResponseEntity.badRequest().body(null);
         }
     }
+    @GetMapping("/pending-arrival/{restaurantId}")
+    public ResponseEntity<List<ReservationDto>> getPendingArrivalReservations(
+            @PathVariable UUID restaurantId) {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime checkWindow = now.minusMinutes(15); // Check reservations from 15 minutes ago
+
+        return ResponseEntity.ok(reservationService.getReservationsForArrivalCheck(
+                restaurantId,
+                checkWindow,
+                now.plusMinutes(15)
+        ));
+    }
+
+    @PostMapping("/{id}/no-show")
+    @PreAuthorize("hasAnyRole('STAFF', 'MANAGER')")
+    public ResponseEntity<Object> markAsNoShow(@PathVariable Long id) {
+        try {
+            ReservationDto dto = reservationService.markAsNoShow(id);
+
+            // Send WebSocket notifications
+            if (dto.getTableId() != null) {
+                // Notify about table update
+                webSocketService.notifyTableUpdate(dto.getTableId());
+
+                // Send status change notification
+                Map<String, Object> notification = new HashMap<>();
+                notification.put("type", "TABLE_STATUS_CHANGED");
+                notification.put("tableId", dto.getTableId());
+                notification.put("status", "AVAILABLE");
+                webSocketService.sendStaffNotification(dto.getCompanyId(), notification);
+            }
+
+            return ResponseEntity.ok(dto);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to mark as no-show: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/extended-stay/{restaurantId}")
+    public ResponseEntity<List<ReservationDto>> getExtendedStayReservations(
+            @PathVariable UUID restaurantId) {
+        return ResponseEntity.ok(
+                reservationService.getExtendedStayReservations(restaurantId)
+        );
+    }
+
 }

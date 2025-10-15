@@ -1,4 +1,4 @@
-package service;
+package com.reserveit.service;
 
 import com.reserveit.enums.TableShape;
 import com.reserveit.enums.TableStatus;

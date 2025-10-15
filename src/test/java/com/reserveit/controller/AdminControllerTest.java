@@ -1,4 +1,4 @@
-package controller;
+package com.reserveit.controller;
 
 import com.reserveit.controller.AdminController;
 import com.reserveit.dto.RegisterRequest;

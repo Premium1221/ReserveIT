@@ -4,29 +4,41 @@ import com.reserveit.dto.TablePositionDto;
 import com.reserveit.enums.TableShape;
 import com.reserveit.enums.TableStatus;
 import com.reserveit.logic.interfaces.DiningTableService;
-import com.reserveit.logic.impl.WebSocketService;
+import com.reserveit.logic.impl.WebSocketServiceImpl;
+import com.reserveit.logic.interfaces.ReservationService;
+import com.reserveit.logic.interfaces.TableAllocationService;
+import com.reserveit.logic.interfaces.WebSocketService;
+import com.reserveit.model.DiningTable;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.time.LocalDateTime;
+import java.util.*;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/tables")
-@CrossOrigin(origins = "http://localhost:5200", allowCredentials = "true")
+@CrossOrigin(
+        origins = {"http://localhost:5200", "http://127.0.0.1:5200", "http://172.29.96.1:5200"},
+        allowCredentials = "true"
+)
 public class TableController {
 
     private final DiningTableService tableService;
     private final WebSocketService webSocketService;
+    private final TableAllocationService tableAllocationService;
+    private final ReservationService reservationService;
 
-    public TableController(DiningTableService tableService, WebSocketService webSocketService) {
+    public TableController(DiningTableService tableService, WebSocketServiceImpl webSocketService, TableAllocationService tableAllocationService, ReservationService reservationService) {
         this.tableService = tableService;
         this.webSocketService = webSocketService;
+        this.tableAllocationService = tableAllocationService;
+        this.reservationService = reservationService;
     }
 
     @GetMapping("/company/{companyId}")
@@ -64,7 +76,7 @@ public class TableController {
 
     @PutMapping("/{id}/status")
     @PreAuthorize("hasRole('MANAGER')")
-    public ResponseEntity<?> updateStatus(@PathVariable Long id, @RequestBody TableStatus status) {
+    public ResponseEntity<Object> updateStatus(@PathVariable Long id, @RequestBody TableStatus status) {
         try {
             tableService.updateTableStatus(id, status);
             notifyTableUpdate(id);
@@ -79,7 +91,7 @@ public class TableController {
 
     @PostMapping("/company/{companyId}")
     @PreAuthorize("hasRole('MANAGER') or hasRole('STAFF')")
-    public ResponseEntity<?> addTable(
+    public ResponseEntity<Object> addTable(
             @PathVariable UUID companyId,
             @Valid @RequestBody TablePositionDto tableDto) {
         try {
@@ -105,9 +117,10 @@ public class TableController {
                     .body("Failed to add table: " + e.getMessage());
         }
     }
+
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('MANAGER')")
-    public ResponseEntity<?> updateTable(
+    public ResponseEntity<Object> updateTable(
             @PathVariable Long id,
             @Valid @RequestBody TablePositionDto tableDto) {
         try {
@@ -133,6 +146,86 @@ public class TableController {
             return ResponseEntity.internalServerError().build();
         }
     }
+/*
+    @GetMapping("/suggestions/{restaurantId}")
+    public ResponseEntity<?> getTableSuggestions(
+            @PathVariable UUID restaurantId,
+            @RequestParam int partySize,
+            @RequestParam(required = false) Long selectedTableId) {
+        try {
+            // Get available tables as DTOs
+            List<TablePositionDto> availableTableDtos = tableService.getTablesByCompany(restaurantId)
+                    .stream()
+                    .filter(table -> table.getStatus() == TableStatus.AVAILABLE)
+                    .collect(Collectors.toList());
+
+            // Convert DTOs to entities for the allocation service
+            List<DiningTable> availableTables = availableTableDtos.stream()
+                    .map(this::convertDtoToEntity)
+                    .collect(Collectors.toList());
+
+            if (selectedTableId != null) {
+                DiningTable selectedTable = tableService.findById(selectedTableId);
+                if (selectedTable == null) {
+                    return ResponseEntity.badRequest().body("Selected table not found");
+                }
+
+                List<TableSuggestion> suggestions =
+                        tableAllocationService.getAlternativeSuggestions(availableTables, partySize, selectedTable);
+                return ResponseEntity.ok(suggestions);
+            } else {
+                Optional<DiningTable> optimalTable =
+                        tableAllocationService.findOptimalTable(availableTables, partySize);
+                return optimalTable
+                        .map(table -> ResponseEntity.ok(Collections.singletonList(
+                                new TableSuggestion(null, "This is the best table for your party", true, 100))))
+                        .orElse(ResponseEntity.ok(Collections.emptyList()));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error getting table suggestions: " + e.getMessage());
+        }
+    }
+*/
+    @GetMapping("/check-availability")
+    public ResponseEntity<Object> checkTimeSlotAvailability(
+            @RequestParam UUID companyId,
+            @RequestParam Long tableId,
+            @RequestParam String dateTime,
+            @RequestParam(defaultValue = "120") Integer duration) {
+        try {
+            boolean isAvailable = reservationService.isTimeSlotAvailable(companyId, tableId, dateTime, duration);
+            return ResponseEntity.ok(isAvailable);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+    @GetMapping("/restaurant/{restaurantId}/availability")
+    public ResponseEntity<Object> checkTablesAvailability(
+            @PathVariable UUID restaurantId,
+            @RequestParam String dateTime) {
+        try {
+            // Get all tables for the restaurant
+            List<DiningTable> tables = tableService.getTablesByCompany(restaurantId)
+                    .stream()
+                    .map(dto -> tableService.findById(dto.getId()))
+                    .toList();
+
+            // Check availability for each table
+            List<Map<String, Object>> availabilityInfo = tables.stream()
+                    .map(table -> {
+                        Map<String, Object> map = new HashMap<>();
+                        map.put("id", table.getId());
+                        map.put("isAvailable", table.isAvailableForDateTime(LocalDateTime.parse(dateTime)));
+                        return map;
+                    })
+                    .toList();
+
+            return ResponseEntity.ok(availabilityInfo);
+        } catch (Exception e) {
+            logError("Failed to check tables availability", e);
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
     // Utility Methods
 
     private void validateAuthenticatedCompanyId(UUID companyId) {
@@ -155,7 +248,9 @@ public class TableController {
         }
     }
 
+
+
     private void logError(String message, Exception e) {
-        System.err.println(message + " - Error: " + e.getMessage());
+        log.error("{} - Error: {}", message, e.getMessage());
     }
 }

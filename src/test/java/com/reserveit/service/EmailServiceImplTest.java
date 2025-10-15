@@ -1,4 +1,4 @@
-package service;
+package com.reserveit.service;
 
 import com.reserveit.logic.impl.EmailServiceImpl;
 import org.junit.jupiter.api.BeforeEach;

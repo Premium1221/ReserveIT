@@ -1,7 +1,6 @@
 package com.reserveit.database.impl;
 
 import com.reserveit.database.interfaces.DiningTableDatabase;
-import com.reserveit.enums.TableShape;
 import com.reserveit.enums.TableStatus;
 import com.reserveit.model.DiningTable;
 import com.reserveit.repository.DiningTableRepository;
@@ -86,23 +85,6 @@ public class DiningTableDatabaseImpl implements DiningTableDatabase {
     @Transactional
     public int updateTableStatus(Long tableId, TableStatus status) {
         return diningTableRepository.updateStatus(tableId, status);
-    }
-
-    @Override
-    @Transactional
-    public int updateTableProperties(
-            Long tableId,
-            UUID companyId,
-            String tableNumber,
-            int capacity,
-            TableShape shape,
-            TableStatus status,
-            boolean isOutdoor,
-            int floorLevel
-    ) {
-        return diningTableRepository.updateTableProperties(
-                tableId, companyId, tableNumber, capacity, shape,
-                status, isOutdoor, floorLevel);
     }
 
     // Save operations

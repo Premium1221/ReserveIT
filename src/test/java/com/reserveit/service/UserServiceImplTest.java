@@ -1,4 +1,4 @@
-package service;
+package com.reserveit.service;
 
 import com.reserveit.database.interfaces.UserDatabase;
 import com.reserveit.dto.UserDto;
@@ -133,6 +133,98 @@ class UserServiceImplTest {
 
             // Act & Assert
             assertThrows(IllegalArgumentException.class, () -> userService.getUserByEmail(email));
+        }
+    }
+    @Nested
+    class UpdatePasswordTests {
+        @Test
+        void updatePassword_ProfileSetUp_Success() {
+            // Arrange
+            UUID userId = UUID.randomUUID();
+            User user = createSampleUser();
+            String oldPassword = "oldPass";
+            String newPassword = "newPass";
+            String newHashedPassword = "newHashedPass";
+
+            when(userDb.findById(userId)).thenReturn(Optional.of(user));
+            when(passwordHasher.matches(oldPassword, user.getHashedPassword())).thenReturn(true);
+            when(passwordHasher.hashPassword(newPassword)).thenReturn(newHashedPassword);
+
+            // Act
+            int result = userService.updatePassword(userId, oldPassword, newPassword);
+
+            // Assert
+            assertEquals(0, result); // Profile is set up
+            assertEquals(newHashedPassword, user.getHashedPassword());
+            verify(userDb).save(user);
+        }
+
+        @Test
+        void updatePassword_PasswordsDoNotMatch() {
+            // Arrange
+            UUID userId = UUID.randomUUID();
+            User user = createSampleUser();
+            String oldPassword = "wrongOldPass";
+            String newPassword = "newPass";
+
+            when(userDb.findById(userId)).thenReturn(Optional.of(user));
+            when(passwordHasher.matches(anyString(), anyString())).thenReturn(false);
+
+            // Act
+            int result = userService.updatePassword(userId, oldPassword, newPassword);
+
+            // Assert
+            assertEquals(1, result); // Passwords don't match
+            verify(userDb, never()).save(any());
+        }
+
+        @Test
+        void updatePassword_ProfileNotFound() {
+            // Arrange
+            UUID userId = UUID.randomUUID();
+            String oldPassword = "oldPass";
+            String newPassword = "newPass";
+
+            when(userDb.findById(userId)).thenReturn(Optional.empty());
+
+            // Act
+            int result = userService.updatePassword(userId, oldPassword, newPassword);
+
+            // Assert
+            assertEquals(2, result); // Profile not found
+            verify(userDb, never()).save(any());
+        }
+    }
+
+    @Nested
+    class GetUserEntityByEmailTests {
+        @Test
+        void getUserEntityByEmail_Found() {
+            // Arrange
+            String email = "test@example.com";
+            User user = createSampleUser();
+            when(userDb.findByEmail(email)).thenReturn(user);
+
+            // Act
+            User result = userService.getUserEntityByEmail(email);
+
+            // Assert
+            assertNotNull(result);
+            assertEquals(email, result.getEmail());
+            verify(userDb).findByEmail(email);
+        }
+
+        @Test
+        void getUserEntityByEmail_NotFound() {
+            // Arrange
+            String email = "nonexistent@example.com";
+            when(userDb.findByEmail(email)).thenReturn(null);
+
+            // Act & Assert
+            Exception exception = assertThrows(IllegalArgumentException.class,
+                    () -> userService.getUserEntityByEmail(email));
+            assertEquals("User not found with email: " + email, exception.getMessage());
+            verify(userDb).findByEmail(email);
         }
     }
 

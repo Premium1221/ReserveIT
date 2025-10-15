@@ -16,7 +16,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -88,7 +87,7 @@ public class AdminServiceImpl implements AdminService {
     public List<UserDto> getAllUsers() {
         return userDatabase.findAll().stream()
                 .map(this::convertToDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private void validateRequest(RegisterRequest request) {
@@ -114,13 +113,17 @@ public class AdminServiceImpl implements AdminService {
                 throw new IllegalArgumentException("Company ID is required for manager role");
             }
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Invalid role: " + request.getRole());
+            if (!"MANAGER".equalsIgnoreCase(request.getRole())) {
+                throw new IllegalArgumentException("Invalid role: " + request.getRole());
+            }
+            throw e;
         }
 
         if (userDatabase.existsByEmail(request.getEmail())) {
             throw new IllegalStateException("Email already exists");
         }
     }
+
 
     private User buildUser(RegisterRequest request, String password) {
         User user = new User();

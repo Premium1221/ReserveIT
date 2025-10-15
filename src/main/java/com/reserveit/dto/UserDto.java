@@ -14,19 +14,18 @@ public class UserDto {
     private String phoneNumber;
 
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
-    private String password; // For receiving plain password
+    private String password;
 
     @JsonIgnore
-    private String hashedPassword; // Never sent to client
+    private String hashedPassword;
 
     private UserRole role;
-    private UUID companyId; // Reference to company by ID instead of String
-    private String companyName; // For display purposes
+    private UUID companyId;
+    private String companyName;
     private boolean active = true;
 
     // Constructors
-    public UserDto() {
-    }
+
 
     // Helper methods
     public String getFullName() {

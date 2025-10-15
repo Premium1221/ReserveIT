@@ -16,5 +16,7 @@ public interface UserService {
    int updatePassword(UUID id, String oldPassword, String newPassword);
     UserDto getUserByEmail(String email);
     User getUserEntityByEmail(String username);
+    User getCurrentUser();
+
 
 }

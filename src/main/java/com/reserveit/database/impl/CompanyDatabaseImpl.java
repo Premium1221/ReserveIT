@@ -4,12 +4,14 @@ import com.reserveit.database.interfaces.CompanyDatabase;
 import com.reserveit.model.Category;
 import com.reserveit.model.Company;
 import com.reserveit.repository.CompanyRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+@Slf4j
 @Component
 public class CompanyDatabaseImpl implements CompanyDatabase {
     private final CompanyRepository companyRepository;
@@ -42,10 +44,10 @@ public class CompanyDatabaseImpl implements CompanyDatabase {
     public List<Company> findAll() {
         try {
             List<Company> companies = companyRepository.findAll();
-            System.out.println("Found " + companies.size() + " companies in database");
+            log.info("Found {} companies in database", companies.size());
             return companies;
         } catch (Exception e) {
-            System.err.println("Error in CompanyDatabaseImpl.findAll(): " + e.getMessage());
+            log.error("Error in CompanyDatabaseImpl.findAll(): {}", e.getMessage());
             throw e;
         }
     }

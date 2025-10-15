@@ -8,13 +8,13 @@ import com.reserveit.model.User;
 import com.reserveit.logic.interfaces.UserService;
 import com.reserveit.util.PasswordHasher;
 import jakarta.transaction.Transactional;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 public class UserServiceImp implements UserService {
@@ -39,7 +39,7 @@ public class UserServiceImp implements UserService {
     public List<UserDto> getAllUsers() {
         return userDb.findAll().stream()
                 .map(this::convertToDto)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -116,6 +116,12 @@ public class UserServiceImp implements UserService {
         }
         throw new IllegalArgumentException("User not found with email: " + email);
     }
+    @Override
+    public User getCurrentUser() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        return getUserEntityByEmail(email);
+    }
+
     private User convertToEntity(UserDto userDto) {
         User user = new User();
         user.setId(userDto.getId());

@@ -13,6 +13,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -119,12 +120,18 @@ public class DiningTable {
     }
 
     public boolean isAvailableForDateTime(LocalDateTime dateTime) {
-        return status == TableStatus.AVAILABLE &&
-                reservations.stream()
-                        .noneMatch(reservation ->
-                                reservation.getReservationDate().equals(dateTime) &&
-                                        reservation.getStatus() != ReservationStatus.CANCELLED
-                        );
+        if (this.status == TableStatus.OUT_OF_SERVICE) {
+            return false;
+        }
+
+        return !this.getReservations().stream()
+                .filter(r -> r.getStatus() != ReservationStatus.CANCELLED)
+                .anyMatch(r -> {
+                    LocalDateTime reservationStart = r.getReservationDate();
+                    LocalDateTime reservationEnd = r.getEndTime();
+                    return dateTime.isEqual(reservationStart) ||
+                            (dateTime.isAfter(reservationStart) && dateTime.isBefore(reservationEnd));
+                });
     }
 
     public boolean isAvailable() {
@@ -144,4 +151,5 @@ public class DiningTable {
             configuration.getTables().add(this);
         }
     }
+
 }

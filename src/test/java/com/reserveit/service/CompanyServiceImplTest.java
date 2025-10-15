@@ -1,4 +1,4 @@
-package service;
+package com.reserveit.service;
 
 import com.reserveit.database.interfaces.CompanyDatabase;
 import com.reserveit.dto.CompanyDto;
@@ -427,6 +427,8 @@ class CompanyServiceImplTest {
     void deleteCompany_Success() {
         // Arrange
         UUID id = UUID.randomUUID();
+        Company existing = createSampleCompany();
+        when(companyDb.findById(id)).thenReturn(java.util.Optional.of(existing));
 
         // Act
         companyService.deleteCompany(id);
