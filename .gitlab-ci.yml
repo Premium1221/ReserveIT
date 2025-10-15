@@ -9,8 +9,7 @@ stages:
 build:
   stage: build
   script:
-    - >
-      gradlew.bat clean assemble --no-daemon
+    - '& .\gradlew.bat clean assemble --no-daemon'
   artifacts:
     paths:
       - build/libs/*.jar
@@ -20,7 +19,7 @@ test:
   stage: test
   script:
     - >
-      gradlew.bat test jacocoTestReport --no-daemon
+      & .\gradlew.bat test jacocoTestReport --no-daemon
       -Dspring.profiles.active=test
       -Dspring.datasource.url="jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;MODE=MySQL;DATABASE_TO_UPPER=false"
       -Dspring.datasource.driver-class-name=org.h2.Driver
@@ -35,9 +34,9 @@ sonar:
     SONAR_TOKEN: $SONAR_TOKEN
   script:
     - >
-      gradlew.bat sonar --no-daemon
-      -Dsonar.host.url=%SONAR_HOST_URL%
-      -Dsonar.token=%SONAR_TOKEN%
+      & .\gradlew.bat sonar --no-daemon
+      -Dsonar.host.url=$env:SONAR_HOST_URL
+      -Dsonar.token=$env:SONAR_TOKEN
 
 
 # Build Docker image

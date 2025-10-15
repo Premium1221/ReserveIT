@@ -1,4 +1,4 @@
-package util;
+package com.reserveit.util;
 
 import com.reserveit.logic.interfaces.StaffService;
 import com.reserveit.model.Company;
