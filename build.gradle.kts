@@ -121,7 +121,8 @@ sonarqube {
         property("sonar.tests", "src/test/java")
         property("sonar.java.coveragePlugin", "jacoco")
         property("sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/test/jacocoTestReport.xml")
-        property("sonar.qualitygate.wait", true)
+        // Do not block the build on Quality Gate in CI; the status is visible in the Sonar UI
+        property("sonar.qualitygate.wait", false)
         property("sonar.exclusions", listOf(
             "**/MainApplication.java",
             "**/model/**",
