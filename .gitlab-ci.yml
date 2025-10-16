@@ -36,7 +36,7 @@ sonar:
     SONAR_TOKEN: $SONAR_TOKEN
   script:
     - 'git fetch --unshallow 2>$null; if ($LASTEXITCODE -ne 0) { git fetch --all --tags }'
-    - '& .\gradlew.bat -Dsonar.qualitygate.wait=false sonar --no-daemon'
+    - '& .\gradlew.bat ''-Dsonar.qualitygate.wait=false'' sonar --no-daemon'
 
 
 # Build Docker image
