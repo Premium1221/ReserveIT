@@ -29,7 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
-@Import(SecurityTestConfig.class)
+@Import({SecurityTestConfig.class, com.reserveit.config.NoopMailTestConfig.class})
 class AdminControllerIntegrationTest {
 
     @Autowired
@@ -158,3 +158,4 @@ class AdminControllerIntegrationTest {
                 .andExpect(status().isBadRequest());
     }
 }
+

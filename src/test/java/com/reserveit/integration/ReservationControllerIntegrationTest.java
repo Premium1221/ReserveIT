@@ -34,7 +34,7 @@ import static org.hamcrest.Matchers.*;
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
-@Import(SecurityTestConfig.class)
+@Import({SecurityTestConfig.class, com.reserveit.config.NoopMailTestConfig.class})
 class ReservationControllerIntegrationTest {
 
     @Autowired
@@ -296,3 +296,4 @@ class ReservationControllerIntegrationTest {
                 .andExpect(jsonPath("$", hasSize(greaterThanOrEqualTo(0))));
     }
 }
+
